@@ -851,18 +851,18 @@ Proof.
 
 (** Theorem: Addition is commutative.
 
-    Proof: (* FILL IN HERE *)
-*)
+    Proof: By induction on m
 
-Theorem plus_comm_informal : forall n m : nat,
-  n + m = m + n.
-Proof.
-  intros n m.
-  induction m as [| m'].
-  rewrite -> plus_0_r. reflexivity.
-  simpl. rewrite <- IHm'. rewrite -> plus_n_Sm.
-  reflexivity. Qed.
-(** [] *)
+    First, suppose [m = O], We must show
+    n + 0 = 0 + n,
+    apply plus_0_r to it. done.
+
+    Next, suppose [m = S m'], We must show
+    n + S m' = S (m' + n),
+    rewrite with induction hypothese.
+    n + S m' = S (n + m')
+    rewrite with plus_n_Sm. done.
+ [] *)
 
 (** **** Exercise: 2 stars, optional (beq_nat_refl_informal)  *)
 (** Write an informal proof of the following theorem, using the
@@ -871,13 +871,14 @@ Proof.
 
     Theorem: [true = beq_nat n n] for any [n].
 
-    Proof: (* FILL IN HERE *)
+    Proof: By induction on n.
+
+    First, suppose [n = 0], We must show
+    true = beq_nat 0 0,
+    by simplifying.
+    Next, suppose [n = S n'], We must show
+    true = beq_nat n' n',
+    by induction hypothesis. done.
  [] *)
 
-Theorem beq_nat_refl_informal : forall n : nat,
-  true = beq_nat n n.
-Proof.
-  intros n. induction n.
-  reflexivity.
-  simpl. rewrite <- IHn. reflexivity. Qed.
 (** $Date: 2014-12-31 15:31:47 -0500 (Wed, 31 Dec 2014) $ *)
