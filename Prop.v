@@ -1031,10 +1031,10 @@ End R.
       Hint: choose your induction carefully!
 *)
 
-Inductive subseq : list nat -> list nat -> Prop :=
-  | sub_nil : forall (l:list nat), subseq [] l
-  | sub2 : forall (n:nat) (l1 l2:list nat), subseq l1 l2 -> subseq l1 (n :: l2)
-  | sub3 : forall (n:nat) (l1 l2:list nat), subseq l1 l2 -> subseq (n :: l1) (n :: l2).
+Inductive subseq {X:Type} : list X -> list X -> Prop :=
+  | sub_nil : forall l, subseq [] l
+  | sub2 : forall n l1 l2, subseq l1 l2 -> subseq l1 (n :: l2)
+  | sub3 : forall n l1 l2, subseq l1 l2 -> subseq (n :: l1) (n :: l2).
 
 Theorem cons_app : forall (X:Type) (l1 l2:list X) (x:X),
   (x :: l1) ++ l2 = x :: (l1 ++ l2).
@@ -1043,27 +1043,27 @@ Proof.
   simpl. reflexivity.
 Qed.
 
-Theorem subseq_refl : forall (l:list nat), subseq l l.
+Theorem subseq_refl : forall (X:Type) (l:list X), subseq l l.
 Proof.
   intros. induction l. apply sub_nil.
   apply sub3. apply IHl.
 Qed.
 
-Theorem subseq_app_nil : forall (l:list nat), subseq nil l.
+Theorem subseq_app_nil : forall (X:Type) (l:list X), subseq nil l.
 Proof.
   intros.
   induction l. apply subseq_refl.
   apply sub2. apply IHl.
 Qed.
 
-Theorem subseq_app_self : forall (l1 l2:list nat), subseq l1 (l1 ++ l2).
+Theorem subseq_app_self : forall (X:Type) (l1 l2:list X), subseq l1 (l1 ++ l2).
 Proof.
   intros.
   induction l1. apply subseq_app_nil. rewrite cons_app.
   apply sub3. apply IHl1.
 Qed.
 
-Theorem subseq_app : forall (l1 l2 l3:list nat),
+Theorem subseq_app : forall (X:Type) (l1 l2 l3:list X),
   subseq l1 l2 -> subseq l1 (l2 ++ l3).
 Proof.
   intros.
@@ -1072,10 +1072,10 @@ Proof.
   rewrite cons_app. apply sub3. apply IHsubseq.
 Qed.
 
-Theorem subseq_cons : forall (l1 l2:list nat) (n:nat),
+Theorem subseq_cons : forall (X:Type) (l1 l2:list X) (n:X),
   subseq (n :: l1) l2 -> subseq l1 l2.
 Proof.
-  intros l1 l2 n.
+  intros X l1 l2 n.
   generalize n l1.
   induction l2.
   intros. inversion H. intros.
@@ -1083,17 +1083,17 @@ Proof.
   apply H2. apply sub2. apply H1.
 Qed.
 
-Theorem subseq_cut : forall (l1 l2:list nat) (n1 n2:nat),
+Theorem subseq_cut : forall (X:Type) (l1 l2:list X) (n1 n2:X),
   subseq (n1 :: l1) (n2 :: l2) -> subseq l1 l2.
 Proof.
   intros. inversion H.
   apply subseq_cons in H2. apply H2. apply H1.
 Qed.
 
-Theorem subseq_trans : forall (l1 l2 l3:list nat),
+Theorem subseq_trans : forall (X:Type) (l1 l2 l3:list X),
   subseq l1 l2 -> subseq l2 l3 -> subseq l1 l3.
 Proof.
-  intros l1 l2 l3. generalize dependent l1.
+  intros X l1 l2 l3. generalize dependent l1.
   generalize dependent l2. induction l3.
   intros l1 l2 h i. inversion i.
   rewrite <- H in h. inversion h. apply sub_nil.
