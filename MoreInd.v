@@ -6,17 +6,17 @@ Require Export "ProofObjects".
 (** * Induction Principles *)
 
 (** This is a good point to pause and take a deeper look at induction
-    principles. 
+    principles.
 
     Every time we declare a new [Inductive] datatype, Coq
-    automatically generates and proves an _induction principle_ 
+    automatically generates and proves an _induction principle_
     for this type.
 
     The induction principle for a type [t] is called [t_ind].  Here is
     the one for natural numbers: *)
 
 Check nat_ind.
-(*  ===> nat_ind : 
+(*  ===> nat_ind :
            forall P : nat -> Prop,
               P 0  ->
               (forall n : nat, P n -> P (S n))  ->
@@ -30,12 +30,12 @@ Check nat_ind.
     proofs.  Here, for example, is an alternate proof of a theorem
     that we saw in the [Basics] chapter. *)
 
-Theorem mult_0_r' : forall n:nat, 
+Theorem mult_0_r' : forall n:nat,
   n * 0 = 0.
 Proof.
-  apply nat_ind. 
+  apply nat_ind.
   Case "O". reflexivity.
-  Case "S". simpl. intros n IHn. rewrite -> IHn. 
+  Case "S". simpl. intros n IHn. rewrite -> IHn.
     reflexivity.  Qed.
 
 
@@ -70,19 +70,19 @@ Proof.
 (** Complete this proof as we did [mult_0_r'] above, without using
     the [induction] tactic. *)
 
-Theorem plus_one_r' : forall n:nat, 
+Theorem plus_one_r' : forall n:nat,
   n + 1 = S n.
 Proof.
   (* FILL IN HERE *) Admitted.
 (** [] *)
 
 (** Coq generates induction principles for every datatype defined with
-    [Inductive], including those that aren't recursive. (Although 
-    we don't need induction to prove properties of non-recursive 
+    [Inductive], including those that aren't recursive. (Although
+    we don't need induction to prove properties of non-recursive
     datatypes, the idea of an induction principle still makes sense
     for them: it gives a way to prove that a property holds for all
     values of the type.)
-    
+
     These generated principles follow a similar pattern. If we define a
     type [t] with constructors [c1] ... [cn], Coq generates a theorem
     with this shape:
@@ -90,7 +90,7 @@ Proof.
        forall P : t -> Prop,
             ... case for c1 ... ->
             ... case for c2 ... ->
-            ...                
+            ...
             ... case for cn ... ->
             forall n : t, P n
     The specific shape of each case depends on the arguments to the
@@ -102,8 +102,8 @@ Inductive yesno : Type :=
   | yes : yesno
   | no : yesno.
 
-Check yesno_ind. 
-(* ===> yesno_ind : forall P : yesno -> Prop, 
+Check yesno_ind.
+(* ===> yesno_ind : forall P : yesno -> Prop,
                       P yes  ->
                       P no  ->
                       forall y : yesno, P y *)
@@ -157,7 +157,7 @@ Inductive natlist1 : Type :=
       says (in English):
         - "for all values [x1]...[xn] of types [a1]...[an], if [P]
            holds for each of the inductive arguments (each [xi] of
-           type [t]), then [P] holds for [c x1 ... xn]". 
+           type [t]), then [P] holds for [c x1 ... xn]".
 
 *)
 
@@ -169,7 +169,7 @@ Inductive natlist1 : Type :=
     into a comment, and then compare it with what Coq prints. *)
 
 Inductive byntree : Type :=
- | bempty : byntree  
+ | bempty : byntree
  | bleaf  : yesno -> byntree
  | nbranch : yesno -> byntree -> byntree -> byntree.
 (** [] *)
@@ -231,10 +231,10 @@ Check tree_ind.
         forall (X : Type) (P : mytype X -> Prop),
             (forall x : X, P (constr1 X x)) ->
             (forall n : nat, P (constr2 X n)) ->
-            (forall m : mytype X, P m -> 
+            (forall m : mytype X, P m ->
                forall n : nat, P (constr3 X m n)) ->
-            forall m : mytype X, P m                   
-*) 
+            forall m : mytype X, P m
+*)
 (** [] *)
 
 (** **** Exercise: 1 star, optional (foo)  *)
@@ -246,8 +246,8 @@ Check tree_ind.
              (forall y : Y, P (baz X Y y)) ->
              (forall f1 : nat -> foo X Y,
                (forall n : nat, P (f1 n)) -> P (quux X Y f1)) ->
-             forall f2 : foo X Y, P f2       
-*) 
+             forall f2 : foo X Y, P f2
+*)
 (** [] *)
 
 (** **** Exercise: 1 star, optional (foo')  *)
@@ -262,7 +262,7 @@ Inductive foo' (X:Type) : Type :=
      foo'_ind :
         forall (X : Type) (P : foo' X -> Prop),
               (forall (l : list X) (f : foo' X),
-                    _______________________ -> 
+                    _______________________ ->
                     _______________________   ) ->
              ___________________________________________ ->
              forall f : foo' X, ________________________
@@ -291,25 +291,25 @@ Inductive foo' (X:Type) : Type :=
    "[forall n, n * 0 = 0]," we can write it as "[forall n, P_m0r
    n]", where [P_m0r] is defined as... *)
 
-Definition P_m0r (n:nat) : Prop := 
+Definition P_m0r (n:nat) : Prop :=
   n * 0 = 0.
 
 (** ... or equivalently... *)
 
-Definition P_m0r' : nat->Prop := 
+Definition P_m0r' : nat->Prop :=
   fun n => n * 0 = 0.
 
 (** Now when we do the proof it is easier to see where [P_m0r]
     appears. *)
 
-Theorem mult_0_r'' : forall n:nat, 
+Theorem mult_0_r'' : forall n:nat,
   P_m0r n.
 Proof.
   apply nat_ind.
   Case "n = O". reflexivity.
-  Case "n = S n'". 
+  Case "n = S n'".
     (* Note the proof state at this point! *)
-    intros n IHn. 
+    intros n IHn.
     unfold P_m0r in IHn. unfold P_m0r. simpl. apply IHn. Qed.
 
 (** This extra naming step isn't something that we'll do in
@@ -349,23 +349,23 @@ Proof.
     example, in our original proof that [plus] is associative...
 *)
 
-Theorem plus_assoc' : forall n m p : nat, 
-  n + (m + p) = (n + m) + p.   
+Theorem plus_assoc' : forall n m p : nat,
+  n + (m + p) = (n + m) + p.
 Proof.
   (* ...we first introduce all 3 variables into the context,
      which amounts to saying "Consider an arbitrary [n], [m], and
      [p]..." *)
-  intros n m p. 
+  intros n m p.
   (* ...We now use the [induction] tactic to prove [P n] (that
      is, [n + (m + p) = (n + m) + p]) for _all_ [n],
      and hence also for the particular [n] that is in the context
      at the moment. *)
   induction n as [| n'].
   Case "n = O". reflexivity.
-  Case "n = S n'". 
+  Case "n = S n'".
     (* In the second subgoal generated by [induction] -- the
-       "inductive step" -- we must prove that [P n'] implies 
-       [P (S n')] for all [n'].  The [induction] tactic 
+       "inductive step" -- we must prove that [P n'] implies
+       [P (S n')] for all [n'].  The [induction] tactic
        automatically introduces [n'] and [P n'] into the context
        for us, leaving just [P (S n')] as the goal. *)
     simpl. rewrite -> IHn'. reflexivity.  Qed.
@@ -374,12 +374,12 @@ Proof.
 (** It also works to apply [induction] to a variable that is
    quantified in the goal. *)
 
-Theorem plus_comm' : forall n m : nat, 
+Theorem plus_comm' : forall n m : nat,
   n + m = m + n.
 Proof.
-  induction n as [| n']. 
+  induction n as [| n'].
   Case "n = O". intros m. rewrite -> plus_0_r. reflexivity.
-  Case "n = S n'". intros m. simpl. rewrite -> IHn'. 
+  Case "n = S n'". intros m. simpl. rewrite -> IHn'.
     rewrite <- plus_n_Sm. reflexivity.  Qed.
 
 (** Note that [induction n] leaves [m] still bound in the goal --
@@ -391,11 +391,11 @@ Proof.
     automatically introduce the variables bound by these quantifiers
     into the context. *)
 
-Theorem plus_comm'' : forall n m : nat, 
+Theorem plus_comm'' : forall n m : nat,
   n + m = m + n.
 Proof.
   (* Let's do induction on [m] this time, instead of [n]... *)
-  induction m as [| m']. 
+  induction m as [| m'].
   Case "m = O". simpl. rewrite -> plus_0_r. reflexivity.
   Case "m = S m'". simpl. rewrite <- IHm'.
     rewrite <- plus_n_Sm. reflexivity.  Qed.
@@ -415,67 +415,67 @@ Proof.
 
 (** One potentially confusing feature of the [induction] tactic is
 that it happily lets you try to set up an induction over a term
-that isn't sufficiently general.  The net effect of this will be 
+that isn't sufficiently general.  The net effect of this will be
 to lose information (much as [destruct] can do), and leave
 you unable to complete the proof. Here's an example: *)
 
-Lemma one_not_beautiful_FAILED: ~ beautiful 1. 
+Lemma one_not_beautiful_FAILED: ~ beautiful 1.
 Proof.
   intro H.
   (* Just doing an [inversion] on [H] won't get us very far in the [b_sum]
     case. (Try it!). So we'll need induction. A naive first attempt: *)
-  induction H. 
+  induction H.
   (* But now, although we get four cases, as we would expect from
-     the definition of [beautiful], we lose all information about [H] ! *) 
+     the definition of [beautiful], we lose all information about [H] ! *)
 Abort.
 
-(** The problem is that [induction] over a Prop only works properly over 
+(** The problem is that [induction] over a Prop only works properly over
    completely general instances of the Prop, i.e. one in which all
-   the arguments are free (unconstrained) variables. 
+   the arguments are free (unconstrained) variables.
    In this respect it behaves more
-   like [destruct] than like [inversion]. 
+   like [destruct] than like [inversion].
 
    When you're tempted to do use [induction] like this, it is generally
    an indication that you need to be proving something more general.
    But in some cases, it suffices to pull out any concrete arguments
    into separate equations, like this: *)
 
-Lemma one_not_beautiful: forall n, n = 1 -> ~ beautiful n. 
+Lemma one_not_beautiful: forall n, n = 1 -> ~ beautiful n.
 Proof.
  intros n E H.
-  induction H  as [| | | p q Hp IHp Hq IHq]. 
+  induction H  as [| | | p q Hp IHp Hq IHq].
     Case "b_0".
       inversion E.
-    Case "b_3". 
-      inversion E. 
-    Case "b_5". 
-      inversion E. 
-    Case "b_sum". 
+    Case "b_3".
+      inversion E.
+    Case "b_5".
+      inversion E.
+    Case "b_sum".
       (* the rest is a tedious case analysis *)
       destruct p as [|p'].
       SCase "p = 0".
         destruct q as [|q'].
-        SSCase "q = 0". 
+        SSCase "q = 0".
           inversion E.
         SSCase "q = S q'".
-          apply IHq. apply E. 
-      SCase "p = S p'". 
+          apply IHq. apply E.
+      SCase "p = S p'".
         destruct q as [|q'].
-        SSCase "q = 0". 
-          apply IHp.  rewrite plus_0_r in E. apply E. 
+        SSCase "q = 0".
+          apply IHp.  rewrite plus_0_r in E. apply E.
         SSCase "q = S q'".
-          simpl in E. inversion E.  destruct p'.  inversion H0.  inversion H0. 
+          simpl in E. inversion E.  destruct p'.  inversion H0.  inversion H0.
 Qed.
 
 (** There's a handy [remember] tactic that can generate the second
 proof state out of the original one. *)
 
-Lemma one_not_beautiful': ~ beautiful 1. 
+Lemma one_not_beautiful': ~ beautiful 1.
 Proof.
-  intros H.  
-  remember 1 as n eqn:E. 
+  intros H.
+  remember 1 as n eqn:E.
   (* now carry on as above *)
-  induction H.   
+  induction H.
 Admitted.
 
 
@@ -539,8 +539,8 @@ Admitted.
     for _all_ of your inductive proofs. *)
 
 (** *** Induction Over an Inductively Defined Set *)
- 
-(** _Template_: 
+
+(** _Template_:
 
        - _Theorem_: <Universally quantified proposition of the form
          "For all [n:S], [P(n)]," where [S] is some inductively defined
@@ -557,9 +557,9 @@ Admitted.
              <go on and prove [P(n)] to finish the case...>
 
            - <other cases similarly...>                        []
- 
+
     _Example_:
- 
+
       - _Theorem_: For all sets [X], lists [l : list X], and numbers
         [n], if [length l = n] then [index (S n) l = None].
 
@@ -579,20 +579,20 @@ Admitted.
 
           Let [n] be a number with [length l = n].  Since
             length l = length (x::l') = S (length l'),
-          it suffices to show that 
+          it suffices to show that
             index (S (length l')) l' = None.
-]]  
+]]
           But this follows directly from the induction hypothesis,
           picking [n'] to be length [l'].  [] *)
- 
+
 (** *** Induction Over an Inductively Defined Proposition *)
 
 (** Since inductively defined proof objects are often called
     "derivation trees," this form of proof is also known as _induction
-    on derivations_. 
+    on derivations_.
 
     _Template_:
- 
+
        - _Theorem_: <Proposition of the form "[Q -> P]," where [Q] is
          some inductively defined proposition (more generally,
          "For all [x] [y] [z], [Q x y z -> P x y z]")>
@@ -616,7 +616,7 @@ Admitted.
            - <other cases similarly...>                        []
 
     _Example_
- 
+
        - _Theorem_: The [<=] relation is transitive -- i.e., for all
          numbers [n], [m], and [o], if [n <= m] and [m <= o], then
          [n <= o].
@@ -675,9 +675,9 @@ Admitted.
     gorgeous_ind_max :
        forall P : (forall n : nat, gorgeous n -> Prop),
             P O g_0 ->
-            (forall (m : nat) (e : gorgeous m), 
+            (forall (m : nat) (e : gorgeous m),
                P m e -> P (3+m) (g_plus3 m e) ->
-            (forall (m : nat) (e : gorgeous m), 
+            (forall (m : nat) (e : gorgeous m),
                P m e -> P (5+m) (g_plus5 m e) ->
             forall (n : nat) (e : gorgeous n), P n e
     ... because:
@@ -745,9 +745,9 @@ Check gorgeous_ind.
     - Suppose, [P] is a property of natural numbers (that is, [P n] is
       a [Prop] for every [n]).  To show that [P n] holds whenever [n]
       is gorgeous, it suffices to show:
-  
+
       - [P] holds for [0],
-  
+
       - for any [n], if [n] is gorgeous and [P] holds for
         [n], then [P] holds for [3+n],
 
@@ -784,9 +784,9 @@ For example, in [Logic], we have defined [<=] as: *)
      | le_n : forall n, le n n
      | le_S : forall n m, (le n m) -> (le n (S m)). *)
 
-(** This definition can be streamlined a little by observing that the 
-    left-hand argument [n] is the same everywhere in the definition, 
-    so we can actually make it a "general parameter" to the whole 
+(** This definition can be streamlined a little by observing that the
+    left-hand argument [n] is the same everywhere in the definition,
+    so we can actually make it a "general parameter" to the whole
     definition, rather than an argument to each constructor. *)
 
 Inductive le (n:nat) : nat -> Prop :=
@@ -809,7 +809,7 @@ Check le_ind.
     messier to work with when proving things by induction.  Here is
     the induction principle for the first [le]: *)
 
-(* le_ind : 
+(* le_ind :
      forall P : nat -> nat -> Prop,
      (forall n : nat, P n n) ->
      (forall n m : nat, le n m -> P n m -> P n (S m)) ->
@@ -826,9 +826,9 @@ Check le_ind.
      | foo2 : Y -> foo X Y
      | foo3 : foo X Y -> foo X Y.
    Fill in the blanks to complete the induction principle that will be
-   generated by Coq. 
+   generated by Coq.
    foo_ind
-        : forall (X Y : Set) (P : foo X Y -> Prop),   
+        : forall (X Y : Set) (P : foo X Y -> Prop),
           (forall x : X, __________________________________) ->
           (forall y : Y, __________________________________) ->
           (________________________________________________) ->
@@ -858,21 +858,21 @@ Check le_ind.
 (** Given the following inductively defined proposition:
   Inductive no_longer_than (X : Set) : (list X) -> nat -> Prop :=
     | nlt_nil  : forall n, no_longer_than X [] n
-    | nlt_cons : forall x l n, no_longer_than X l n -> 
+    | nlt_cons : forall x l n, no_longer_than X l n ->
                                no_longer_than X (x::l) (S n)
-    | nlt_succ : forall l n, no_longer_than X l n -> 
+    | nlt_succ : forall l n, no_longer_than X l n ->
                              no_longer_than X l (S n).
   write the induction principle generated by Coq.
   no_longer_than_ind
        : forall (X : Set) (P : list X -> nat -> Prop),
          (forall n : nat, ____________________) ->
          (forall (x : X) (l : list X) (n : nat),
-          no_longer_than X l n -> ____________________ -> 
+          no_longer_than X l n -> ____________________ ->
                                   _____________________________ ->
          (forall (l : list X) (n : nat),
-          no_longer_than X l n -> ____________________ -> 
+          no_longer_than X l n -> ____________________ ->
                                   _____________________________ ->
-         forall (l : list X) (n : nat), no_longer_than X l n -> 
+         forall (l : list X) (n : nat), no_longer_than X l n ->
            ____________________
 
 *)
@@ -887,7 +887,7 @@ Check le_ind.
 (* Inductive eq (X:Type) : X -> X -> Prop :=
        refl_equal : forall x, eq X x x. *)
 
-(** In the Coq standard library, the definition of equality is 
+(** In the Coq standard library, the definition of equality is
     slightly different: *)
 
 Inductive eq' (X:Type) (x:X) : X -> Prop :=
@@ -904,13 +904,13 @@ Inductive eq' (X:Type) (x:X) : X -> Prop :=
     principle itself _is the definition_ of equality.) *)
 
 Check eq'_ind.
-(* ===> 
+(* ===>
      forall (X : Type) (x : X) (P : X -> Prop),
-       P x -> forall y : X, x =' y -> P y 
+       P x -> forall y : X, x =' y -> P y
 
    ===>  (i.e., after a little reorganization)
-     forall (X : Type) (x : X) forall y : X, 
-       x =' y -> 
+     forall (X : Type) (x : X) forall y : X,
+       x =' y ->
        forall P : X -> Prop, P x -> P y *)
 
 
@@ -963,7 +963,7 @@ Check and_ind.
             (P -> P0) ->
             (Q -> P0) ->
             P \/ Q -> P0
-]] 
+]]
 *)
 
 (** **** Exercise: 1 star, optional (False_ind_principle)  *)
@@ -976,8 +976,8 @@ Check and_ind.
 
 Check ex_ind.
 (* ===>  forall (X:Type) (P: X->Prop) (Q: Prop),
-         (forall witness:X, P witness -> Q) -> 
-          ex X P -> 
+         (forall witness:X, P witness -> Q) ->
+          ex X P ->
            Q *)
 
 (** This induction principle can be understood as follows: If we have
@@ -997,15 +997,15 @@ Check ex_ind.
     work with, the ability to write a proof term directly is sometimes
     very handy, particularly when we want Coq to do something slightly
     non-standard.  *)
-    
+
 (** Recall the induction principle on naturals that Coq generates for
     us automatically from the Inductive declation for [nat]. *)
 
 Check nat_ind.
-(* ===> 
+(* ===>
    nat_ind : forall P : nat -> Prop,
-      P 0 -> 
-      (forall n : nat, P n -> P (S n)) -> 
+      P 0 ->
+      (forall n : nat, P n -> P (S n)) ->
       forall n : nat, P n  *)
 
 (** There's nothing magic about this induction lemma: it's just
@@ -1016,8 +1016,8 @@ Print nat_ind.
 Print nat_rect.
 (* ===> (after some manual inlining and tidying)
    nat_ind =
-    fun (P : nat -> Prop) 
-        (f : P 0) 
+    fun (P : nat -> Prop)
+        (f : P 0)
         (f0 : forall n : nat, P n -> P (S n)) =>
           fix F (n : nat) : P n :=
              match n with
@@ -1026,55 +1026,55 @@ Print nat_rect.
             end.
 *)
 
-(** We can read this as follows: 
-     Suppose we have evidence [f] that [P] holds on 0,  and 
-     evidence [f0] that [forall n:nat, P n -> P (S n)].  
-     Then we can prove that [P] holds of an arbitrary nat [n] via 
-     a recursive function [F] (here defined using the expression 
-     form [Fix] rather than by a top-level [Fixpoint] 
-     declaration).  [F] pattern matches on [n]: 
+(** We can read this as follows:
+     Suppose we have evidence [f] that [P] holds on 0,  and
+     evidence [f0] that [forall n:nat, P n -> P (S n)].
+     Then we can prove that [P] holds of an arbitrary nat [n] via
+     a recursive function [F] (here defined using the expression
+     form [Fix] rather than by a top-level [Fixpoint]
+     declaration).  [F] pattern matches on [n]:
       - If it finds 0, [F] uses [f] to show that [P n] holds.
-      - If it finds [S n0], [F] applies itself recursively on [n0] 
-         to obtain evidence that [P n0] holds; then it applies [f0] 
-         on that evidence to show that [P (S n)] holds. 
-    [F] is just an ordinary recursive function that happens to 
+      - If it finds [S n0], [F] applies itself recursively on [n0]
+         to obtain evidence that [P n0] holds; then it applies [f0]
+         on that evidence to show that [P (S n)] holds.
+    [F] is just an ordinary recursive function that happens to
     operate on evidence in [Prop] rather than on terms in [Set].
- 
+
 *)
 
- 
+
 (**  We can adapt this approach to proving [nat_ind] to help prove
     _non-standard_ induction principles too.  Recall our desire to
     prove that
 
     [forall n : nat, even n -> ev n].
- 
+
     Attempts to do this by standard induction on [n] fail, because the
     induction principle only lets us proceed when we can prove that
     [even n -> even (S n)] -- which is of course never provable.  What
     we did in [Logic] was a bit of a hack:
- 
+
     [Theorem even__ev : forall n : nat,
      (even n -> ev n) /\ (even (S n) -> ev (S n))].
- 
+
     We can make a much better proof by defining and proving a
     non-standard induction principle that goes "by twos":
- 
+
  *)
- 
- Definition nat_ind2 : 
-    forall (P : nat -> Prop), 
-    P 0 -> 
-    P 1 -> 
-    (forall n : nat, P n -> P (S(S n))) -> 
+
+ Definition nat_ind2 :
+    forall (P : nat -> Prop),
+    P 0 ->
+    P 1 ->
+    (forall n : nat, P n -> P (S(S n))) ->
     forall n : nat , P n :=
-       fun P => fun P0 => fun P1 => fun PSS => 
-          fix f (n:nat) := match n with 
-                             0 => P0 
-                           | 1 => P1 
-                           | S (S n') => PSS n' (f n') 
+       fun P => fun P0 => fun P1 => fun PSS =>
+          fix f (n:nat) := match n with
+                             0 => P0
+                           | 1 => P1
+                           | S (S n') => PSS n' (f n')
                           end.
- 
+
  (** Once you get the hang of it, it is entirely straightforward to
      give an explicit proof term for induction principles like this.
      Proving this as a lemma using tactics is much less intuitive (try
@@ -1082,19 +1082,19 @@ Print nat_rect.
 
      The [induction ... using] tactic variant gives a convenient way to
      specify a non-standard induction principle like this. *)
- 
+
 Lemma even__ev' : forall n, even n -> ev n.
-Proof. 
- intros.  
- induction n as [ | |n'] using nat_ind2. 
-  Case "even 0". 
-    apply ev_0.  
-  Case "even 1". 
+Proof.
+ intros.
+ induction n as [ | |n'] using nat_ind2.
+  Case "even 0".
+    apply ev_0.
+  Case "even 1".
     inversion H.
-  Case "even (S(S n'))". 
-    apply ev_SS. 
-    apply IHn'.  unfold even.  unfold even in H.  simpl in H. apply H. 
-Qed. 
+  Case "even (S(S n'))".
+    apply ev_SS.
+    apply IHn'.  unfold even.  unfold even in H.  simpl in H. apply H.
+Qed.
 
 (* ######################################################### *)
 (** ** The Coq Trusted Computing Base *)
@@ -1132,7 +1132,7 @@ Qed.
         fun (P Q : Prop) (A : P \/ Q) =>
            match A with
            | or_introl H => H
-           end. 
+           end.
       All the types here match correctly, but the [match] only
       considers one of the possible constructors for [or].  Coq's
       exhaustiveness check will reject this definition.
@@ -1143,7 +1143,7 @@ Qed.
       argument.  To see why this is essential, consider this alleged
       proof:
           Definition nat_false : forall (n:nat), False :=
-             fix f (n:nat) : False := f n. 
+             fix f (n:nat) : False := f n.
       Again, this is perfectly well-typed, but (fortunately) Coq will
       reject it. *)
 
@@ -1156,5 +1156,3 @@ Qed.
     used in further proof developments.  *)
 
 (** $Date: 2014-12-31 15:31:47 -0500 (Wed, 31 Dec 2014) $ *)
-
-
