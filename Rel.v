@@ -15,7 +15,7 @@ Require Export SfLib.
     parameterized by two elements of [X] -- i.e., a proposition about
     pairs of elements of [X].  *)
 
-Definition relation (X: Type) := X->X->Prop.
+Definition relation (X: Type) := X -> X -> Prop.
 
 (** Somewhat confusingly, the Coq standard library hijacks the generic
     term "relation" for this specific instance. To maintain
@@ -52,23 +52,23 @@ Check le : relation nat.
     y1] and [R x y2] together imply [y1 = y2]. *)
 
 Definition partial_function {X: Type} (R: relation X) :=
-  forall x y1 y2 : X, R x y1 -> R x y2 -> y1 = y2. 
+  forall x y1 y2 : X, R x y1 -> R x y2 -> y1 = y2.
 
 (** For example, the [next_nat] relation defined earlier is a partial
     function. *)
 
 Print next_nat.
-(* ====> Inductive next_nat (n : nat) : nat -> Prop := 
+(* ====> Inductive next_nat (n : nat) : nat -> Prop :=
            nn : next_nat n (S n) *)
 Check next_nat : relation nat.
 
-Theorem next_nat_partial_function : 
+Theorem next_nat_partial_function :
    partial_function next_nat.
-Proof. 
+Proof.
   unfold partial_function.
   intros x y1 y2 H1 H2.
   inversion H1. inversion H2.
-  reflexivity.  Qed. 
+  reflexivity.  Qed.
 
 (** However, the [<=] relation on numbers is not a partial function.
     In short: Assume, for a contradiction, that [<=] is a partial
@@ -82,23 +82,37 @@ Proof.
   unfold not. unfold partial_function. intros Hc.
   assert (0 = 1) as Nonsense.
    Case "Proof of assertion".
-   apply Hc with (x := 0). 
-     apply le_n. 
-     apply le_S. apply le_n. 
+   apply Hc with (x := 0).
+     apply le_n.
+     apply le_S. apply le_n.
   inversion Nonsense.   Qed.
 
 (** **** Exercise: 2 stars, optional  *)
 (** Show that the [total_relation] defined in earlier is not a partial
     function. *)
 
-(* FILL IN HERE *)
+Print total_relation.
+Theorem total_relation_not_a_partial_function :
+  ~ (partial_function total_relation).
+Proof.
+  unfold not. unfold partial_function. intros.
+  assert (0 = 1) as Nonsense.
+  apply H with 0. apply tot. apply tot.
+  inversion Nonsense.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, optional  *)
 (** Show that the [empty_relation] defined earlier is a partial
     function. *)
 
-(* FILL IN HERE *)
+Print empty_relation.
+Theorem empty_relation_is_a_partial_function :
+  partial_function empty_relation.
+Proof.
+  unfold partial_function. intros.
+  inversion H.
+Qed.
 (** [] *)
 
 (** A _reflexive_ relation on a set [X] is one for which every element
@@ -109,7 +123,7 @@ Definition reflexive {X: Type} (R: relation X) :=
 
 Theorem le_reflexive :
   reflexive le.
-Proof. 
+Proof.
   unfold reflexive. intros n. apply le_n.  Qed.
 
 (** A relation [R] is _transitive_ if [R a c] holds whenever [R a b]
@@ -128,10 +142,10 @@ Proof.
 
 Theorem lt_trans:
   transitive lt.
-Proof. 
-  unfold lt. unfold transitive. 
+Proof.
+  unfold lt. unfold transitive.
   intros n m o Hnm Hmo.
-  apply le_S in Hnm. 
+  apply le_S in Hnm.
   apply le_trans with (a := (S n)) (b := (S m)) (c := o).
   apply Hnm.
   apply Hmo. Qed.
@@ -147,7 +161,8 @@ Proof.
   unfold lt. unfold transitive.
   intros n m o Hnm Hmo.
   induction Hmo as [| m' Hm'o].
-    (* FILL IN HERE *) Admitted.
+  apply le_S. apply Hnm. apply le_S. apply IHHm'o.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, optional  *)
@@ -159,7 +174,9 @@ Proof.
   unfold lt. unfold transitive.
   intros n m o Hnm Hmo.
   induction o as [| o'].
-  (* FILL IN HERE *) Admitted.
+  inversion Hmo. apply le_S. inversion Hmo. rewrite <- H0.
+  apply Hnm. apply IHo'. apply H0.
+Qed.
 (** [] *)
 
 (** The transitivity of [le], in turn, can be used to prove some facts
@@ -167,7 +184,7 @@ Proof.
     below)... *)
 
 Theorem le_Sn_le : forall n m, S n <= m -> n <= m.
-Proof. 
+Proof.
   intros n m H. apply le_trans with (S n).
     apply le_S. apply le_n.
     apply H.  Qed.
@@ -176,19 +193,22 @@ Proof.
 Theorem le_S_n : forall n m,
   (S n <= S m) -> (n <= m).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. inversion H. reflexivity.
+  apply le_trans with (S n). apply le_S. apply le_n.
+  apply H1.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, optional (le_Sn_n_inf)  *)
 (** Provide an informal proof of the following theorem:
- 
+
     Theorem: For every [n], [~(S n <= n)]
- 
+
     A formal proof of this is an optional exercise below, but try
     the informal proof without doing the formal proof first.
- 
+
     Proof:
-    (* FILL IN HERE *)
+    ...
     []
  *)
 
@@ -196,7 +216,11 @@ Proof.
 Theorem le_Sn_n : forall n,
   ~ (S n <= n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold not. intros.
+  induction n. inversion H. apply IHn.
+  inversion H. apply H. apply le_trans with (S (S n)).
+  apply le_S. apply le_n. apply H1.
+Qed.
 (** [] *)
 
 (** Reflexivity and transitivity are the main concepts we'll need for
@@ -212,7 +236,12 @@ Definition symmetric {X: Type} (R: relation X) :=
 Theorem le_not_symmetric :
   ~ (symmetric le).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold not. unfold symmetric.
+  intros.
+  assert (1 <= 0).
+  apply H. apply le_S. apply le_n.
+  inversion H0.
+Qed.
 (** [] *)
 
 (** A relation [R] is _antisymmetric_ if [R a b] and [R b a] together
@@ -226,7 +255,12 @@ Definition antisymmetric {X: Type} (R: relation X) :=
 Theorem le_antisymmetric :
   antisymmetric le.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold antisymmetric.
+  intros a. induction a.
+  intros. inversion H. reflexivity. rewrite <- H2 in H0. inversion H0.
+  intros. destruct b. inversion H. apply f_equal.
+  apply IHa. apply le_S_n. apply H. apply le_S_n. apply H0.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, optional  *)
@@ -234,8 +268,12 @@ Theorem le_step : forall n m p,
   n < m ->
   m <= S p ->
   n <= p.
-Proof. 
-  (* FILL IN HERE *) Admitted.
+Proof.
+  unfold lt.
+  intros.
+  apply le_S_n. apply le_trans with m.
+  apply H. apply H0.
+Qed.
 (** [] *)
 
 (** A relation is an _equivalence_ if it's reflexive, symmetric, and
@@ -260,10 +298,10 @@ Definition preorder {X:Type} (R: relation X) :=
 Theorem le_order :
   order le.
 Proof.
-  unfold order. split. 
+  unfold order. split.
     Case "refl". apply le_reflexive.
-    split. 
-      Case "antisym". apply le_antisymmetric. 
+    split.
+      Case "antisym". apply le_antisymmetric.
       Case "transitive.". apply le_trans.  Qed.
 
 (* ########################################################### *)
@@ -310,7 +348,7 @@ Proof.
     out that this definition is not very convenient for doing
     proofs -- the "nondeterminism" of the [rt_trans] rule can sometimes
     lead to tricky inductions.
- 
+
     Here is a more useful definition... *)
 
 Inductive refl_step_closure {X:Type} (R: relation X) : relation X :=
@@ -330,7 +368,7 @@ Inductive refl_step_closure {X:Type} (R: relation X) : relation X :=
 
 Tactic Notation "rt_cases" tactic(first) ident(c) :=
   first;
-  [ Case_aux c "rt_step" | Case_aux c "rt_refl" 
+  [ Case_aux c "rt_step" | Case_aux c "rt_refl"
   | Case_aux c "rt_trans" ].
 
 Tactic Notation "rsc_cases" tactic(first) ident(c) :=
@@ -341,10 +379,10 @@ Tactic Notation "rsc_cases" tactic(first) ident(c) :=
     the [rt_step] and [rt_trans] rules into the single rule step.
     The left-hand premise of this step is a single use of [R],
     leading to a much simpler induction principle.
- 
+
     Before we go on, we should check that the two definitions do
     indeed define the same relation...
-    
+
     First, we prove two lemmas showing that [refl_step_closure] mimics
     the behavior of the two "missing" [clos_refl_trans]
     constructors.  *)
@@ -362,7 +400,10 @@ Theorem rsc_trans :
       refl_step_closure R y z ->
       refl_step_closure R x z.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. induction H. apply H0.
+  apply rsc_step with y. apply H. apply IHrefl_step_closure.
+  apply H0.
+Qed.
 (** [] *)
 
 (** Then we use these facts to prove that the two definitions of
@@ -370,11 +411,19 @@ Proof.
     relation. *)
 
 (** **** Exercise: 3 stars, optional (rtc_rsc_coincide)  *)
-Theorem rtc_rsc_coincide : 
+Theorem rtc_rsc_coincide :
          forall (X:Type) (R: relation X) (x y : X),
   clos_refl_trans R x y <-> refl_step_closure R x y.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  split.
+  Case "clos_refl -> refl_step".
+  intros. induction H. apply rsc_R. apply H.
+  apply rsc_refl. apply rsc_trans with y. apply IHclos_refl_trans1.
+  apply IHclos_refl_trans2.
+  Case "refl_step -> clos_refl".
+  intros. induction H. apply rt_refl.
+  apply rt_trans with y. apply rt_step. apply H. apply IHrefl_step_closure.
+Qed.
 (** [] *)
 
 (** $Date: 2014-12-31 15:31:47 -0500 (Wed, 31 Dec 2014) $ *)
