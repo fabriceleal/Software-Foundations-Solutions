@@ -1616,7 +1616,6 @@ Proof.
 (** **** Exercise: 3 stars (XtimesYinZ_spec)  *)
 (** State and prove a specification of [XtimesYinZ]. *)
 
-Print XtimesYinZ.
 Theorem XtimesYinZ_spec : forall st x y st',
     st X = x ->
     st Y = y ->
@@ -1987,7 +1986,6 @@ Reserved Notation "c1 '/' st '||' s '/' st'"
 (** Based on the above description, complete the definition of the
     [ceval] relation. *)
 
-Print ceval.
 Inductive ceval : com -> state -> status -> state -> Prop :=
   | E_Skip : forall st,
       CSkip / st || SContinue / st
@@ -2124,7 +2122,23 @@ End BreakImp.
     evaluation of [BAnd] in this manner, and prove that it is
     equivalent to [beval]. *)
 
-(* FILL IN HERE *)
+Fixpoint beval' (st : state) (b : bexp) {struct b} : bool :=
+  match b with
+    | BTrue => true
+    | BFalse => false
+    | BEq a1 a2 => beq_nat (aeval st a1) (aeval st a2)
+    | BLe a1 a2 => ble_nat (aeval st a1) (aeval st a2)
+    | BNot b1 => negb (beval st b1)
+    | BAnd b1 b2 => match (beval st b1) with
+                     | false => false
+                     | true => beval st b2
+                   end
+  end.
+
+Theorem beval_equivalence : forall e st, beval st e = beval' st e.
+Proof.
+  intros. induction e; simpl; try (reflexivity).
+Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, optional (add_for_loop)  *)
@@ -2141,7 +2155,90 @@ End BreakImp.
     about making up a concrete Notation for [for] loops, but feel free
     to play with this too if you like.) *)
 
-(* FILL IN HERE *)
+Module ForImp.
+
+Inductive com : Type :=
+  | CSkip : com
+  | CAss : id -> aexp -> com
+  | CSeq : com -> com -> com
+  | CIf : bexp -> com -> com -> com
+  | CWhile : bexp -> com -> com
+  | CFor : com -> bexp -> com -> com -> com.
+
+Notation "'SKIP'" :=
+  CSkip.
+Notation "x '::=' a" :=
+  (CAss x a) (at level 60).
+Notation "c1 ;; c2" :=
+  (CSeq c1 c2) (at level 80, right associativity).
+Notation "'WHILE' b 'DO' c 'END'" :=
+  (CWhile b c) (at level 80, right associativity).
+Notation "'IFB' c1 'THEN' c2 'ELSE' c3 'FI'" :=
+  (CIf c1 c2 c3) (at level 80, right associativity).
+Notation "'FOR' a ; b ; c 'DO' d " :=
+  (CFor a b c d) (at level 80, right associativity).
+
+Reserved Notation "c1 '/' st '||' st'" (at level 40, st at level 39).
+Inductive ceval : com -> state -> state -> Prop :=
+| E_Skip : forall st,
+             SKIP / st || st
+| E_Ass  : forall st a1 n x,
+             aeval st a1 = n ->
+             (x ::= a1) / st || (update st x n)
+| E_Seq : forall c1 c2 st st' st'',
+            c1 / st  || st' ->
+            c2 / st' || st'' ->
+            (c1 ;; c2) / st || st''
+| E_IfTrue : forall st st' b c1 c2,
+               beval st b = true ->
+               c1 / st || st' ->
+               (IFB b THEN c1 ELSE c2 FI) / st || st'
+| E_IfFalse : forall st st' b c1 c2,
+                beval st b = false ->
+                c2 / st || st' ->
+                (IFB b THEN c1 ELSE c2 FI) / st || st'
+| E_WhileEnd : forall b st c,
+                 beval st b = false ->
+                 (WHILE b DO c END) / st || st
+| E_WhileLoop : forall st st' st'' b c,
+                  beval st b = true ->
+                  c / st || st' ->
+                  (WHILE b DO c END) / st' || st'' ->
+                  (WHILE b DO c END) / st || st''
+| E_ForInit : forall a b c d st st' st'',
+                a / st || st' ->
+                (FOR a ; b ; c DO d) / st' || st'' ->
+                (FOR a ; b ; c DO d) / st || st''
+| E_ForEnd : forall a b c d st,
+               beval st b = false ->
+               (FOR a ; b ; c DO d) / st || st
+| E_ForLoop : forall a b c d st st' st'' st''',
+                beval st b = true ->
+                d / st || st' ->
+                c / st' || st'' ->
+                (FOR a ; b ; c DO d) / st'' || st''' ->
+                (FOR a ; b ; c DO d) / st || st'''
+
+                                     where "c1 '/' st '||' st'" := (ceval c1 st st').
+
+Theorem imp_for_test :
+(Y ::= (ANum 0) ;;
+FOR X ::= (ANum 1) ; BNot (BEq (AId X) (ANum 0)) ; X ::= AMinus (AId X) (ANum 1)
+DO Y ::= APlus (AId X) (AId Y)) / empty_state ||
+(update (update (update (update empty_state Y 0) X 1) Y 1) X 0).
+Proof.
+  apply E_Seq with (update empty_state Y 0). apply E_Ass. reflexivity.
+  apply E_ForInit with (update (update empty_state Y 0) X 1). apply E_Ass.
+  reflexivity.
+  apply E_ForLoop with (update (update (update empty_state Y 0) X 1) Y 1)
+                         (update (update (update (update empty_state Y 0) X 1) Y 1) X 0).
+  reflexivity. apply E_Ass. reflexivity.
+  apply E_Ass. reflexivity.
+  apply E_ForEnd. reflexivity.
+Qed.
+
+
+End ForImp.
 (** [] *)
 
 
