@@ -360,7 +360,7 @@ Definition parse (str : string) : optionE (com * list token) :=
 (** * Examples *)
 
 
-(*
+
 Eval compute in parse "
     IF x == y + 1 + 2 - y * 6 + 3 THEN
       x := x * 1;;
@@ -368,18 +368,17 @@ Eval compute in parse "
     ELSE
       SKIP
     END  ".
-====>
-    SomeE
-       (IFB BEq (AId (Id 0))
-                (APlus
-                   (AMinus (APlus (APlus (AId (Id 1)) (ANum 1)) (ANum 2))
-                      (AMult (AId (Id 1)) (ANum 6)))
-                   (ANum 3))
-        THEN Id 0 ::= AMult (AId (Id 0)) (ANum 1);; Id 1 ::= ANum 0
-        ELSE SKIP FI, [])
-*)
+(* ====> *)
+(*     SomeE *)
+(*        (IFB BEq (AId (Id 0)) *)
+(*                 (APlus *)
+(*                    (AMinus (APlus (APlus (AId (Id 1)) (ANum 1)) (ANum 2)) *)
+(*                       (AMult (AId (Id 1)) (ANum 6))) *)
+(*                    (ANum 3)) *)
+(*         THEN Id 0 ::= AMult (AId (Id 0)) (ANum 1);; Id 1 ::= ANum 0 *)
+(*         ELSE SKIP FI, []) *)
 
-(*
+
 Eval compute in parse "
     SKIP;;
     z:=x*y*(x*x);;
@@ -393,23 +392,22 @@ Eval compute in parse "
       SKIP
     END;;
     x:=z  ".
-====>
-     SomeE
-        (SKIP;;
-         Id 0 ::= AMult (AMult (AId (Id 1)) (AId (Id 2)))
-                        (AMult (AId (Id 1)) (AId (Id 1)));;
-         WHILE BEq (AId (Id 1)) (AId (Id 1)) DO
-           IFB BAnd (BLe (AId (Id 0)) (AMult (AId (Id 0)) (AId (Id 0))))
-                     (BNot (BEq (AId (Id 1)) (ANum 2)))
-              THEN Id 1 ::= AId (Id 0);; Id 2 ::= AId (Id 0)
-              ELSE SKIP FI;;
-           SKIP
-         END;;
-         Id 1 ::= AId (Id 0),
-        [])
-*)
+(* ====> *)
+(*      SomeE *)
+(*         (SKIP;; *)
+(*          Id 0 ::= AMult (AMult (AId (Id 1)) (AId (Id 2))) *)
+(*                         (AMult (AId (Id 1)) (AId (Id 1)));; *)
+(*          WHILE BEq (AId (Id 1)) (AId (Id 1)) DO *)
+(*            IFB BAnd (BLe (AId (Id 0)) (AMult (AId (Id 0)) (AId (Id 0)))) *)
+(*                      (BNot (BEq (AId (Id 1)) (ANum 2))) *)
+(*               THEN Id 1 ::= AId (Id 0);; Id 2 ::= AId (Id 0) *)
+(*               ELSE SKIP FI;; *)
+(*            SKIP *)
+(*          END;; *)
+(*          Id 1 ::= AId (Id 0), *)
+(*         []) *)
 
-(*
+
 Eval compute in parse "
    SKIP;;
    z:=x*y*(x*x);;
@@ -423,22 +421,21 @@ Eval compute in parse "
      SKIP
    END;;
    x:=z  ".
-=====>
-      SomeE
-         (SKIP;;
-          Id 0 ::= AMult (AMult (AId (Id 1)) (AId (Id 2)))
-                (AMult (AId (Id 1)) (AId (Id 1)));;
-          WHILE BEq (AId (Id 1)) (AId (Id 1)) DO
-            IFB BAnd (BLe (AId (Id 0)) (AMult (AId (Id 0)) (AId (Id 0))))
-                     (BNot (BEq (AId (Id 1)) (ANum 2)))
-              THEN Id 1 ::= AId (Id 0);;
-                   Id 2 ::= AId (Id 0)
-              ELSE SKIP
-            FI;;
-            SKIP
-          END;;
-          Id 1 ::= AId (Id 0),
-         []).
-*)
+(* =====> *)
+(*       SomeE *)
+(*          (SKIP;; *)
+(*           Id 0 ::= AMult (AMult (AId (Id 1)) (AId (Id 2))) *)
+(*                 (AMult (AId (Id 1)) (AId (Id 1)));; *)
+(*           WHILE BEq (AId (Id 1)) (AId (Id 1)) DO *)
+(*             IFB BAnd (BLe (AId (Id 0)) (AMult (AId (Id 0)) (AId (Id 0)))) *)
+(*                      (BNot (BEq (AId (Id 1)) (ANum 2))) *)
+(*               THEN Id 1 ::= AId (Id 0);; *)
+(*                    Id 2 ::= AId (Id 0) *)
+(*               ELSE SKIP *)
+(*             FI;; *)
+(*             SKIP *)
+(*           END;; *)
+(*           Id 1 ::= AId (Id 0), *)
+(*          []). *)
 
 (** $Date: 2014-12-31 11:17:56 -0500 (Wed, 31 Dec 2014) $ *)

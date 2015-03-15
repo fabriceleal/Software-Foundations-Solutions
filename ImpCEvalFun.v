@@ -9,29 +9,29 @@ Require Import Imp.
     omitting [WHILE]. *)
 
 Fixpoint ceval_step1 (st : state) (c : com) : state :=
-  match c with 
-    | SKIP => 
+  match c with
+    | SKIP =>
         st
-    | l ::= a1 => 
+    | l ::= a1 =>
         update st l (aeval st a1)
-    | c1 ;; c2 => 
+    | c1 ;; c2 =>
         let st' := ceval_step1 st c1 in
         ceval_step1 st' c2
-    | IFB b THEN c1 ELSE c2 FI => 
-        if (beval st b) 
-          then ceval_step1 st c1 
+    | IFB b THEN c1 ELSE c2 FI =>
+        if (beval st b)
+          then ceval_step1 st c1
           else ceval_step1 st c2
-    | WHILE b1 DO c1 END => 
+    | WHILE b1 DO c1 END =>
         st  (* bogus *)
   end.
 
 (** In a traditional functional programming language like ML or
     Haskell we could write the WHILE case as follows:
 <<
-    | WHILE b1 DO c1 END => 
-        if (beval st b1) 
+    | WHILE b1 DO c1 END =>
+        if (beval st b1)
           then ceval_step1 st (c1;; WHILE b1 DO c1 END)
-          else st 
+          else st
 >>
     Coq doesn't accept such a definition ([Error: Cannot guess
     decreasing argument of fix]) because the function we want to
@@ -58,23 +58,23 @@ Fixpoint ceval_step1 (st : state) (c : com) : state :=
     ensure that evaluation always terminates. *)
 
 Fixpoint ceval_step2 (st : state) (c : com) (i : nat) : state :=
-  match i with 
+  match i with
   | O => empty_state
   | S i' =>
-    match c with 
-      | SKIP => 
+    match c with
+      | SKIP =>
           st
-      | l ::= a1 => 
+      | l ::= a1 =>
           update st l (aeval st a1)
-      | c1 ;; c2 => 
+      | c1 ;; c2 =>
           let st' := ceval_step2 st c1 i' in
-          ceval_step2 st' c2 i' 
-      | IFB b THEN c1 ELSE c2 FI => 
-          if (beval st b) 
-            then ceval_step2 st c1 i' 
+          ceval_step2 st' c2 i'
+      | IFB b THEN c1 ELSE c2 FI =>
+          if (beval st b)
+            then ceval_step2 st c1 i'
             else ceval_step2 st c2 i'
-      | WHILE b1 DO c1 END => 
-          if (beval st b1) 
+      | WHILE b1 DO c1 END =>
+          if (beval st b1)
           then let st' := ceval_step2 st c1 i' in
                ceval_step2 st' c i'
           else st
@@ -93,27 +93,27 @@ Fixpoint ceval_step2 (st : state) (c : com) (i : nat) : state :=
     so that we can distinguish between normal and abnormal
     termination. *)
 
-Fixpoint ceval_step3 (st : state) (c : com) (i : nat) 
+Fixpoint ceval_step3 (st : state) (c : com) (i : nat)
                     : option state :=
-  match i with 
+  match i with
   | O => None
   | S i' =>
-    match c with 
-      | SKIP => 
+    match c with
+      | SKIP =>
           Some st
-      | l ::= a1 => 
+      | l ::= a1 =>
           Some (update st l (aeval st a1))
-      | c1 ;; c2 => 
+      | c1 ;; c2 =>
           match (ceval_step3 st c1 i') with
           | Some st' => ceval_step3 st' c2 i'
           | None => None
           end
-      | IFB b THEN c1 ELSE c2 FI => 
-          if (beval st b) 
-            then ceval_step3 st c1 i' 
+      | IFB b THEN c1 ELSE c2 FI =>
+          if (beval st b)
+            then ceval_step3 st c1 i'
             else ceval_step3 st c2 i'
-      | WHILE b1 DO c1 END => 
-          if (beval st b1)           
+      | WHILE b1 DO c1 END =>
+          if (beval st b1)
           then match (ceval_step3 st c1 i') with
                | Some st' => ceval_step3 st' c i'
                | None => None
@@ -126,49 +126,49 @@ Fixpoint ceval_step3 (st : state) (c : com) (i : nat)
     bit of auxiliary notation to hide the "plumbing" involved in
     repeatedly matching against optional states. *)
 
-Notation "'LETOPT' x <== e1 'IN' e2" 
+Notation "'LETOPT' x <== e1 'IN' e2"
    := (match e1 with
          | Some x => e2
          | None => None
        end)
    (right associativity, at level 60).
 
-Fixpoint ceval_step (st : state) (c : com) (i : nat) 
+Fixpoint ceval_step (st : state) (c : com) (i : nat)
                     : option state :=
-  match i with 
+  match i with
   | O => None
   | S i' =>
-    match c with 
-      | SKIP => 
+    match c with
+      | SKIP =>
           Some st
-      | l ::= a1 => 
+      | l ::= a1 =>
           Some (update st l (aeval st a1))
-      | c1 ;; c2 => 
+      | c1 ;; c2 =>
           LETOPT st' <== ceval_step st c1 i' IN
           ceval_step st' c2 i'
-      | IFB b THEN c1 ELSE c2 FI => 
-          if (beval st b) 
-            then ceval_step st c1 i' 
+      | IFB b THEN c1 ELSE c2 FI =>
+          if (beval st b)
+            then ceval_step st c1 i'
             else ceval_step st c2 i'
-      | WHILE b1 DO c1 END => 
-          if (beval st b1)           
+      | WHILE b1 DO c1 END =>
+          if (beval st b1)
           then LETOPT st' <== ceval_step st c1 i' IN
                ceval_step st' c i'
           else Some st
     end
   end.
 
-Definition test_ceval (st:state) (c:com) := 
+Definition test_ceval (st:state) (c:com) :=
   match ceval_step st c 500 with
   | None    => None
   | Some st => Some (st X, st Y, st Z)
-  end.  
+  end.
 
-(* Eval compute in 
-     (test_ceval empty_state 
+(* Eval compute in
+     (test_ceval empty_state
          (X ::= ANum 2;;
           IFB BLe (AId X) (ANum 1)
-            THEN Y ::= ANum 3 
+            THEN Y ::= ANum 3
             ELSE Z ::= ANum 4
           FI)).
    ====>
@@ -179,15 +179,17 @@ Definition test_ceval (st:state) (c:com) :=
    [X] (inclusive: [1 + 2 + ... + X]) in the variable [Y].  Make sure
    your solution satisfies the test that follows. *)
 
-Definition pup_to_n : com := 
-  (* FILL IN HERE *) admit.
+Definition pup_to_n : com :=
+  Y ::= (ANum 0);;
+  WHILE BLe (ANum 1) (AId X) DO
+    Y ::= APlus (AId Y) (AId X);;
+    X ::= AMinus (AId X) (ANum 1)
+  END.
 
-(* 
-Example pup_to_n_1 : 
+Example pup_to_n_1 :
   test_ceval (update empty_state X 5) pup_to_n
   = Some (0, 15, 0).
 Proof. reflexivity. Qed.
-*)
 (** [] *)
 
 (** **** Exercise: 2 stars, optional (peven)  *)
@@ -195,7 +197,23 @@ Proof. reflexivity. Qed.
     sets [Z] to [1] otherwise.  Use [ceval_test] to test your
     program. *)
 
-(* FILL IN HERE *)
+Definition peven : com :=
+  WHILE BLe (ANum 2) (AId X) DO
+    X ::= AMinus (AId X) (ANum 2)
+  END;;
+  IFB BEq (ANum 1) (AId X) THEN
+    Z ::= (ANum 1) ELSE Z ::= (ANum 0)
+  FI.
+
+Example peven_11:
+  test_ceval (update empty_state X 11) peven
+  = Some (1, 0, 1).
+Proof. reflexivity. Qed.
+
+Example peven_10:
+  test_ceval (update empty_state X 10) peven
+  = Some (0, 0, 0).
+Proof. reflexivity. Qed.
 (** [] *)
 
 (* ################################################################ *)
@@ -224,21 +242,21 @@ Proof.
 
   Case "i = S i'".
     intros c st st' H.
-    com_cases (destruct c) SCase; 
-           simpl in H; inversion H; subst; clear H. 
+    com_cases (destruct c) SCase;
+           simpl in H; inversion H; subst; clear H.
       SCase "SKIP". apply E_Skip.
       SCase "::=". apply E_Ass. reflexivity.
 
       SCase ";;".
-        destruct (ceval_step st c1 i') eqn:Heqr1. 
+        destruct (ceval_step st c1 i') eqn:Heqr1.
         SSCase "Evaluation of r1 terminates normally".
-          apply E_Seq with s. 
+          apply E_Seq with s.
             apply IHi'. rewrite Heqr1. reflexivity.
             apply IHi'. simpl in H1. assumption.
         SSCase "Otherwise -- contradiction".
           inversion H1.
 
-      SCase "IFB". 
+      SCase "IFB".
         destruct (beval st b) eqn:Heqr.
         SSCase "r = true".
           apply E_IfTrue. rewrite Heqr. reflexivity.
@@ -248,17 +266,17 @@ Proof.
           apply IHi'. assumption.
 
       SCase "WHILE". destruct (beval st b) eqn :Heqr.
-        SSCase "r = true". 
+        SSCase "r = true".
          destruct (ceval_step st c i') eqn:Heqr1.
           SSSCase "r1 = Some s".
             apply E_WhileLoop with s. rewrite Heqr. reflexivity.
-            apply IHi'. rewrite Heqr1. reflexivity. 
+            apply IHi'. rewrite Heqr1. reflexivity.
             apply IHi'. simpl in H1. assumption.
           SSSCase "r1 = None".
             inversion H1.
         SSCase "r = false".
-          inversion H1. 
-          apply E_WhileEnd. 
+          inversion H1.
+          apply E_WhileEnd.
           rewrite <- Heqr. subst. reflexivity.  Qed.
 
 (** **** Exercise: 4 stars (ceval_step__ceval_inf)  *)
@@ -269,20 +287,20 @@ Proof.
     the main ideas to a human reader; do not simply transcribe the
     steps of the formal proof.
 
-(* FILL IN HERE *)
+...
 []
 *)
 
 Theorem ceval_step_more: forall i1 i2 st st' c,
-  i1 <= i2 -> 
-  ceval_step st c i1 = Some st' -> 
+  i1 <= i2 ->
+  ceval_step st c i1 = Some st' ->
   ceval_step st c i2 = Some st'.
-Proof. 
+Proof.
 induction i1 as [|i1']; intros i2 st st' c Hle Hceval.
   Case "i1 = 0".
     simpl in Hceval. inversion Hceval.
   Case "i1 = S i1'".
-    destruct i2 as [|i2']. inversion Hle. 
+    destruct i2 as [|i2']. inversion Hle.
     assert (Hle': i1' <= i2') by omega.
     com_cases (destruct c) SCase.
     SCase "SKIP".
@@ -292,7 +310,7 @@ induction i1 as [|i1']; intros i2 st st' c Hle Hceval.
       simpl in Hceval. inversion Hceval.
       reflexivity.
     SCase ";;".
-      simpl in Hceval. simpl. 
+      simpl in Hceval. simpl.
       destruct (ceval_step st c1 i1') eqn:Heqst1'o.
       SSCase "st1'o = Some".
         apply (IHi1' i2') in Heqst1'o; try assumption.
@@ -304,14 +322,14 @@ induction i1 as [|i1']; intros i2 st st' c Hle Hceval.
     SCase "IFB".
       simpl in Hceval. simpl.
       destruct (beval st b); apply (IHi1' i2') in Hceval; assumption.
-    
+
     SCase "WHILE".
       simpl in Hceval. simpl.
-      destruct (beval st b); try assumption. 
+      destruct (beval st b); try assumption.
       destruct (ceval_step st c i1') eqn: Heqst1'o.
       SSCase "st1'o = Some".
-        apply (IHi1' i2') in Heqst1'o; try assumption. 
-        rewrite -> Heqst1'o. simpl. simpl in Hceval. 
+        apply (IHi1' i2') in Heqst1'o; try assumption.
+        rewrite -> Heqst1'o. simpl. simpl in Hceval.
         apply (IHi1' i2') in Hceval; try assumption.
       SSCase "i1'o = None".
         simpl in Hceval. inversion Hceval.  Qed.
@@ -323,10 +341,30 @@ induction i1 as [|i1']; intros i2 st st' c Hle Hceval.
 Theorem ceval__ceval_step: forall c st st',
       c / st || st' ->
       exists i, ceval_step st c i = Some st'.
-Proof. 
+Proof.
   intros c st st' Hce.
   ceval_cases (induction Hce) Case.
-  (* FILL IN HERE *) Admitted.
+  exists 1. reflexivity. exists 1. simpl. rewrite H. reflexivity.
+  destruct IHHce1. destruct IHHce2.
+  exists (1 + x + x0). simpl. destruct (ceval_step st c1 (x + x0)) eqn:eqstep.
+  apply ceval_step_more with (i2 := x + x0) in H.
+  rewrite H in eqstep. inversion eqstep. subst.
+  apply ceval_step_more with (i1 := x0). omega. assumption. omega.
+  apply ceval_step_more with (i2 := x + x0) in H.
+  rewrite eqstep in H. inversion H. omega.
+  destruct IHHce. exists (1 + x). simpl. rewrite H. assumption.
+  destruct IHHce. exists (1 + x). simpl. rewrite H. assumption.
+  exists 1. simpl. rewrite H. reflexivity.
+  destruct IHHce1. destruct IHHce2.
+  exists (1 + x + x0). simpl. rewrite H.
+  destruct (ceval_step st c (x + x0)) eqn:eqstep.
+  apply ceval_step_more with (i2 := x + x0) in H0.
+  rewrite eqstep in H0. inversion H0.
+  apply ceval_step_more with (i1 := x0). omega. assumption. omega.
+  apply ceval_step_more with (i2 := x + x0) in H0.
+  rewrite H0 in eqstep. inversion eqstep. omega.
+Qed.
+
 (** [] *)
 
 Theorem ceval_and_ceval_step_coincide: forall c st st',
@@ -348,16 +386,15 @@ Theorem ceval_deterministic' : forall c st st1 st2,
      c / st || st1  ->
      c / st || st2 ->
      st1 = st2.
-Proof. 
+Proof.
   intros c st st1 st2 He1 He2.
   apply ceval__ceval_step in He1.
   apply ceval__ceval_step in He2.
-  inversion He1 as [i1 E1]. 
+  inversion He1 as [i1 E1].
   inversion He2 as [i2 E2].
   apply ceval_step_more with (i2 := i1 + i2) in E1.
   apply ceval_step_more with (i2 := i1 + i2) in E2.
-  rewrite E1 in E2. inversion E2. reflexivity. 
+  rewrite E1 in E2. inversion E2. reflexivity.
   omega. omega.  Qed.
 
 (** $Date: 2014-12-31 11:17:56 -0500 (Wed, 31 Dec 2014) $ *)
-
