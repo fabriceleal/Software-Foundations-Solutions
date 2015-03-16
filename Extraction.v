@@ -69,7 +69,7 @@ Extraction "imp2.ml" ceval_step.
 
 (** To use our extracted evaluator to run Imp programs, all we need to
     add is a tiny driver program that calls the evaluator and somehow
-    prints out the result.  
+    prints out the result.
 
     For simplicity, we'll print results by dumping out the first four
     memory locations in the final state.
@@ -107,8 +107,8 @@ Extraction "imp.ml" empty_state ceval_step parse.
     Next, compile the driver together with the extracted code and
     execute it, as follows.
 <<
-	ocamlc -w -20 -w -26 -o impdriver imp.mli imp.ml impdriver.ml
-	./impdriver
+        ocamlc -w -20 -w -26 -o impdriver imp.mli imp.ml impdriver.ml
+        ./impdriver
 >>
     (The [-w] flags to [ocamlc] are just there to suppress a few
     spurious warnings.) *)
