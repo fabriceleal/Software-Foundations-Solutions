@@ -137,7 +137,7 @@ Definition prog_i : com :=
   END.
 
 Definition equiv_classes : list (list com) :=
-  [[prog_a; prog_c; prog_d; prog_f; prog_g; prog_h; prog_i]; [prog_b; prog_e]].
+  [[prog_a; prog_d]; [prog_b; prog_e]; [prog_c; prog_h]; [prog_f; prog_g]; [prog_i]].
 (* GRADE_TEST 2: check_equiv_classes equiv_classes *)
 (** [] *)
 
@@ -1444,12 +1444,48 @@ Lemma aeval_weakening : forall i st a ni,
   var_not_used_in_aexp i a ->
   aeval (update st i ni) a = aeval st a.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. induction H; try (reflexivity);
+  try (simpl; apply update_neq; assumption);
+  simpl; rewrite IHvar_not_used_in_aexp1; rewrite IHvar_not_used_in_aexp2;
+  reflexivity.
+Qed.
 
 (** Using [var_not_used_in_aexp], formalize and prove a correct verson
     of [subst_equiv_property]. *)
 
-(* FILL IN HERE *)
+Theorem subst_equiv_lemma : forall a1 a2 i st,
+  st i = aeval st a1 ->
+  var_not_used_in_aexp i a1 ->
+  aeval st (subst_aexp i a1 a2) = aeval st a2.
+Proof.
+  intros a1 a2.
+  generalize dependent a1. induction a2; intros; simpl; try reflexivity;
+  try (assert (aeval st (subst_aexp i a1 a2_1) = aeval st a2_1) by
+           (apply IHa2_1; assumption; assumption);
+  assert (aeval st (subst_aexp i a1 a2_2) = aeval st a2_2) by
+           (apply IHa2_2; assumption; assumption);
+  rewrite H1; rewrite H2; reflexivity).
+  destruct (eq_id_dec i0 i). rewrite <- e.
+       symmetry. assumption. reflexivity.
+Qed.
+
+Theorem subst_equiv_property' : forall a1 a2 i1 i2,
+  var_not_used_in_aexp i1 a1 ->
+  cequiv (i1 ::= a1;; i2 ::= a2)
+         (i1 ::= a1;; i2 ::= subst_aexp i1 a1 a2).
+Proof.
+  intros.
+  split. intros. inversion H0; subst. inversion H3; subst.
+  inversion H6; subst. apply E_Seq with (update st i1 (aeval st a1)).
+  assumption. apply E_Ass. apply subst_equiv_lemma.
+  rewrite update_eq. symmetry. apply aeval_weakening. assumption. assumption.
+  intros.
+  inversion H0; subst. inversion H3; subst.
+  inversion H6; subst.
+  apply E_Seq with (update st i1 (aeval st a1)). assumption.
+  apply E_Ass. symmetry. apply subst_equiv_lemma.
+  rewrite update_eq. symmetry. apply aeval_weakening. assumption. assumption.
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, optional (inequiv_exercise)  *)
@@ -1458,7 +1494,14 @@ Proof.
 Theorem inequiv_exercise:
   ~ cequiv (WHILE BTrue DO SKIP END) SKIP.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold not. unfold cequiv. intros.
+  assert (WHILE BTrue DO SKIP END / empty_state || empty_state).
+  apply H. apply E_Skip.
+  remember (WHILE BTrue DO SKIP END) as c.
+  induction H0; inversion Heqc.
+  rewrite H2 in H0. inversion H0.
+  subst. apply IHceval2. reflexivity. assumption.
+Qed.
 (** [] *)
 
 (** * Extended exercise: Non-deterministic Imp *)
@@ -1558,7 +1601,8 @@ Inductive ceval : com -> state -> state -> Prop :=
                   c1 / st || st' ->
                   (WHILE b1 DO c1 END) / st' || st'' ->
                   (WHILE b1 DO c1 END) / st || st''
-(* FILL IN HERE *)
+  | E_Havoc : forall i st n,
+                (HAVOC i) / st || update st i n
 
   where "c1 '/' st '||' st'" := (ceval c1 st st').
 
@@ -1567,20 +1611,20 @@ Tactic Notation "ceval_cases" tactic(first) ident(c) :=
   [ Case_aux c "E_Skip" | Case_aux c "E_Ass" | Case_aux c "E_Seq"
   | Case_aux c "E_IfTrue" | Case_aux c "E_IfFalse"
   | Case_aux c "E_WhileEnd" | Case_aux c "E_WhileLoop"
-(* FILL IN HERE *)
+  | Case_aux c "E_Havoc"
 ].
 
 (** As a sanity check, the following claims should be provable for
    your definition: *)
 
 Example havoc_example1 : (HAVOC X) / empty_state || update empty_state X 0.
-Proof.
-(* FILL IN HERE *) Admitted.
+Proof. constructor. Qed.
 
 Example havoc_example2 :
   (SKIP;; HAVOC Z) / empty_state || update empty_state Z 42.
 Proof.
-(* FILL IN HERE *) Admitted.
+  apply  E_Seq with empty_state. constructor. constructor.
+Qed.
 (** [] *)
 
 (** Finally, we repeat the definition of command equivalence from above: *)
@@ -1607,7 +1651,26 @@ Definition pYX :=
 
 Theorem pXY_cequiv_pYX :
   cequiv pXY pYX \/ ~cequiv pXY pYX.
-Proof. (* FILL IN HERE *) Admitted.
+Proof.
+  left. split; intros;
+  inversion H; subst; inversion H2; subst;
+  inversion H5; subst.
+  apply E_Seq with (update st Y n0).
+  apply E_Havoc.
+  assert (update (update st X n) Y n0 = update (update st Y n0) X n).
+  apply functional_extensionality. intros.
+  unfold update.
+  destruct (eq_id_dec Y x); destruct (eq_id_dec X x); try reflexivity.
+  rewrite <- e0 in e. inversion e. rewrite H0. apply E_Havoc.
+  apply E_Seq with (update st X n0).
+  apply E_Havoc.
+  assert (update (update st X n0) Y n = update (update st Y n) X n0).
+  apply functional_extensionality. intros.
+  unfold update.
+  destruct (eq_id_dec Y x); destruct (eq_id_dec X x); try reflexivity.
+  rewrite <- e0 in e. inversion e. rewrite <- H0.
+  apply E_Havoc.
+Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, optional (havoc_copy)  *)
@@ -1625,7 +1688,23 @@ Definition pcopy :=
 
 Theorem ptwice_cequiv_pcopy :
   cequiv ptwice pcopy \/ ~cequiv ptwice pcopy.
-Proof. (* FILL IN HERE *) Admitted.
+Proof.
+  right. unfold not. unfold cequiv. intros.
+  assert (pcopy / empty_state || update (update empty_state X 0) Y 1).
+  apply H. apply E_Seq with (update empty_state X 0). apply E_Havoc.
+  apply E_Havoc. inversion H0; subst.
+  inversion H3; subst. inversion H6; subst.
+  simpl in H7. rewrite update_eq in H7.
+  assert (update (update empty_state X n) Y n X = n).
+  rewrite update_permute. rewrite update_eq. reflexivity. unfold not.
+  intros. inversion H1.
+  assert (update (update empty_state X n) Y n Y = n).
+  rewrite update_eq. reflexivity.
+  rewrite H7 in H1. rewrite H7 in H2.
+  rewrite update_permute in H1. rewrite update_eq in H1.
+  rewrite update_eq in  H2. rewrite <- H1 in H2. inversion H2.
+  unfold not. intros. inversion H4.
+Qed.
 (** [] *)
 
 (** The definition of program equivalence we are using here has some
@@ -1663,18 +1742,51 @@ Definition p2 : com :=
 
 Lemma p1_may_diverge : forall st st', st X <> 0 ->
   ~ p1 / st || st'.
-Proof. (* FILL IN HERE *) Admitted.
+Proof.
+  unfold not. unfold p1. intros.
+  remember (WHILE BNot (BEq (AId X) (ANum 0))
+        DO HAVOC Y;; X ::= APlus (AId X) (ANum 1) END) as p1.
+  induction H0; inversion Heqp1.
+  rewrite H2 in H0. simpl in H0.
+  apply H. apply beq_nat_true. apply negb_false_iff. assumption.
+  apply IHceval2. rewrite H3 in H0_. inversion H0_; subst.
+  inversion H8; subst.
+  rewrite update_eq. simpl. rewrite <- plus_n_Sm. intros.
+  inversion H1. assumption.
+Qed.
 
 Lemma p2_may_diverge : forall st st', st X <> 0 ->
   ~ p2 / st || st'.
 Proof.
-(* FILL IN HERE *) Admitted.
+  unfold not. unfold p2. intros.
+  remember (WHILE BNot (BEq (AId X) (ANum 0)) DO SKIP END) as p2.
+  induction H0; inversion Heqp2.
+  rewrite H2 in H0. simpl in H0. apply H. apply beq_nat_true.
+  apply negb_false_iff. assumption. rewrite H3 in H0_.
+  inversion H0_; subst. apply IHceval2. assumption. reflexivity.
+Qed.
 
 (** You should use these lemmas to prove that p1 and p2 are actually
     equivalent. *)
 
 Theorem p1_p2_equiv : cequiv p1 p2.
-Proof. (* FILL IN HERE *) Admitted.
+Proof.
+  split; intros.
+  Case "->".
+  inversion H; subst.
+  apply E_WhileEnd. assumption.
+  inversion H3; subst. inversion H8; subst.
+  assert (update st'1 X (aeval st'1 (APlus (AId X) (ANum 1))) X <> 0).
+  rewrite update_eq. simpl. rewrite <- plus_n_Sm. unfold not. intros.
+  inversion H0. apply p1_may_diverge with (st' := st') in H0.
+  contradiction.
+  Case "<-".
+  inversion H; subst. apply E_WhileEnd. assumption.
+  inversion H3; subst.
+  simpl in H2. apply negb_true_iff in H2. apply beq_nat_false in H2.
+  apply p2_may_diverge with (st' := st') in H2.
+  contradiction.
+Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced (p3_p4_inquiv)  *)
@@ -1694,7 +1806,29 @@ Definition p4 : com :=
 
 
 Theorem p3_p4_inequiv : ~ cequiv p3 p4.
-Proof. (* FILL IN HERE *) Admitted.
+Proof.
+  unfold cequiv. unfold not. intros.
+  assert (p4 / (update empty_state X 1) ||
+        update (update (update (update empty_state X 1) Z 1) X 0) Z 0).
+  apply H.
+  apply E_Seq with (update (update empty_state X 1) Z 1).
+  apply E_Ass. reflexivity.
+  apply E_WhileLoop with (update (update (update (update empty_state X 1) Z 1) X 0) Z 0).
+  reflexivity.
+  apply E_Seq with (update (update (update empty_state X 1) Z 1) X 0).
+  apply E_Havoc. apply E_Havoc.
+  apply E_WhileEnd. reflexivity.
+  inversion H0; subst.
+  inversion H3; subst.
+  inversion H6; subst.
+  simpl in H7.
+  assert (update (update (update empty_state X 1) X 0) Z 1 Z = 1).
+  rewrite update_eq. reflexivity.
+  assert (update (update (update (update empty_state X 1) Z 1) X 0) Z 0 Z = 0).
+  rewrite update_eq. reflexivity.
+  rewrite H7 in H1. rewrite H1 in H2.
+  inversion H2.
+Qed.
 (** [] *)
 
 (** **** Exercise: 5 stars, advanced, optional (p5_p6_equiv)  *)
