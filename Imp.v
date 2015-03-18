@@ -2205,21 +2205,10 @@ Inductive ceval : com -> state -> state -> Prop :=
                   c / st || st' ->
                   (WHILE b DO c END) / st' || st'' ->
                   (WHILE b DO c END) / st || st''
-| E_ForInit : forall a b c d st st' st'',
-                a / st || st' ->
-                (FOR a ; b ; c DO d) / st' || st'' ->
-                (FOR a ; b ; c DO d) / st || st''
-| E_ForEnd : forall a b c d st,
-               beval st b = false ->
-               (FOR a ; b ; c DO d) / st || st
-| E_ForLoop : forall a b c d st st' st'' st''',
-                beval st b = true ->
-                d / st || st' ->
-                c / st' || st'' ->
-                (FOR a ; b ; c DO d) / st'' || st''' ->
-                (FOR a ; b ; c DO d) / st || st'''
-
-                                     where "c1 '/' st '||' st'" := (ceval c1 st st').
+| E_For: forall a b c d st st',
+           (a ;; WHILE b DO d;; c END) / st || st' ->
+           (FOR a ; b ; c DO d) / st || st'
+  where "c1 '/' st '||' st'" := (ceval c1 st st').
 
 Theorem imp_for_test :
 (Y ::= (ANum 0) ;;
@@ -2228,13 +2217,13 @@ DO Y ::= APlus (AId X) (AId Y)) / empty_state ||
 (update (update (update (update empty_state Y 0) X 1) Y 1) X 0).
 Proof.
   apply E_Seq with (update empty_state Y 0). apply E_Ass. reflexivity.
-  apply E_ForInit with (update (update empty_state Y 0) X 1). apply E_Ass.
+  apply E_For. apply E_Seq with (update (update empty_state Y 0) X 1).
+  constructor. reflexivity.
+  apply E_WhileLoop with (update (update (update (update empty_state Y 0) X 1) Y 1) X 0).
   reflexivity.
-  apply E_ForLoop with (update (update (update empty_state Y 0) X 1) Y 1)
-                         (update (update (update (update empty_state Y 0) X 1) Y 1) X 0).
-  reflexivity. apply E_Ass. reflexivity.
-  apply E_Ass. reflexivity.
-  apply E_ForEnd. reflexivity.
+  apply E_Seq with (update (update (update empty_state Y 0) X 1) Y 1).
+  constructor. reflexivity. constructor. reflexivity.
+  apply E_WhileEnd. reflexivity.
 Qed.
 
 

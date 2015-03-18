@@ -1843,7 +1843,35 @@ Definition p6 : com :=
 
 
 Theorem p5_p6_equiv : cequiv p5 p6.
-Proof. (* FILL IN HERE *) Admitted.
+Proof.
+  split; intros.
+  Case "->".
+  unfold p5 in H.
+  remember (WHILE BNot (BEq (AId X) (ANum 1)) DO HAVOC X END) as p5.
+  induction H; inversion Heqp5; clear Heqp5.
+  rewrite H1 in H. simpl in H.
+  assert (update st X 1 = st).
+  apply functional_extensionality. intros.
+  apply update_same. apply beq_nat_true. apply negb_false_iff. assumption.
+  rewrite <- H0 at 2. apply E_Ass. reflexivity.
+  subst. inversion H0; subst.
+  assert (p6 /update st X n || st''). apply IHceval2. reflexivity.
+  inversion H2; subst. simpl.
+  assert (update (update st X n) X 1 = update st X 1).
+  apply functional_extensionality. intros.
+  rewrite update_shadow. reflexivity.
+  rewrite H3. apply E_Ass. reflexivity.
+  Case "<-".
+  inversion H; subst. simpl in H. simpl.
+  destruct (negb (beq_nat (st X) 1)) eqn:eqnat.
+  apply E_WhileLoop with (update st X 1).
+  simpl. assumption. apply E_Havoc. apply E_WhileEnd. reflexivity.
+  assert (update st X 1 = st).
+  apply functional_extensionality. intros.
+  apply update_same. apply beq_nat_true. apply negb_false_iff. assumption.
+  rewrite H0.
+  apply E_WhileEnd. simpl. assumption.
+Qed.
 (** [] *)
 
 End Himp.
@@ -1878,7 +1906,8 @@ Notation "st1 '~' st2" := (stequiv st1 st2) (at level 30).
 Lemma stequiv_refl : forall (st : state),
   st ~ st.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold stequiv. intros. reflexivity.
+Qed.
 (** [] *)
 
 (** **** Exercise: 1 star, optional (stequiv_sym)  *)
@@ -1886,7 +1915,8 @@ Lemma stequiv_sym : forall (st1 st2 : state),
   st1 ~ st2 ->
   st2 ~ st1.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold stequiv. intros. symmetry. apply H.
+Qed.
 (** [] *)
 
 (** **** Exercise: 1 star, optional (stequiv_trans)  *)
@@ -1895,7 +1925,10 @@ Lemma stequiv_trans : forall (st1 st2 st3 : state),
   st2 ~ st3 ->
   st1 ~ st3.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold stequiv. intros.
+  rewrite H. apply H0.
+Qed.
+
 (** [] *)
 
 (** Another useful fact... *)
@@ -1905,7 +1938,11 @@ Lemma stequiv_update : forall (st1 st2 : state),
   forall (X:id) (n:nat),
   update st1 X n ~ update st2 X n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold stequiv.
+  intros. destruct (eq_id_dec X X0).
+  rewrite e. rewrite update_eq. rewrite update_eq. reflexivity.
+  rewrite update_neq. rewrite update_neq. apply H. assumption. assumption.
+Qed.
 (** [] *)
 
 (** It is then straightforward to show that [aeval] and [beval] behave
@@ -1916,7 +1953,10 @@ Lemma stequiv_aeval : forall (st1 st2 : state),
   st1 ~ st2 ->
   forall (a:aexp), aeval st1 a = aeval st2 a.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold stequiv.
+  intros. induction a; simpl; try reflexivity; try (apply H);
+          try (rewrite IHa1; rewrite IHa2; reflexivity).
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, optional (stequiv_beval)  *)
@@ -1924,7 +1964,14 @@ Lemma stequiv_beval : forall (st1 st2 : state),
   st1 ~ st2 ->
   forall (b:bexp), beval st1 b = beval st2 b.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction b; simpl; try reflexivity;
+  try (assert (aeval st1 a = aeval st2 a) by (apply stequiv_aeval; assumption);
+       assert (aeval st1 a0 = aeval st2 a0) by (apply stequiv_aeval; assumption);
+       rewrite H0; rewrite H1; reflexivity).
+  rewrite IHb. reflexivity.
+  rewrite IHb1. rewrite IHb2. reflexivity.
+Qed.
 (** [] *)
 
 (** We can also characterize the behavior of [ceval] on equivalent
@@ -2027,7 +2074,12 @@ Proof.
       unfold stequiv. intros. apply update_same.
       reflexivity. assumption.
     Case "<-".
-      (* FILL IN HERE *) Admitted.
+      inversion H; subst. inversion H0; subst.
+      apply E_equiv with st. constructor.
+      apply stequiv_trans with (update st X (aeval st (AId X))).
+      unfold stequiv. intros. simpl. rewrite update_same; reflexivity.
+      assumption.
+Qed.
 (** [] *)
 
 (** On the whole, this explicit equivalence approach is considerably
@@ -2059,7 +2111,22 @@ Proof.
          c2
        END
 *)
-(* FILL IN HERE *)
+Import ForImp.
+
+Definition cequiv_for (c1 c2 : com) : Prop :=
+  forall (st st' : state),
+    (c1 / st || st') <-> (c2 / st || st').
+
+Theorem for_while_equiv : forall c1 c2 c3 b,
+  cequiv_for (FOR c1 ; b ; c2 DO c3)
+  (c1 ;; WHILE b DO c3 ;; c2 END).
+Proof.
+  split; intros.
+  inversion H; subst. assumption.
+  constructor. assumption.
+Qed.
+
+Import Imp.
 (** [] *)
 
 (** **** Exercise: 3 stars, optional (swap_noninterfering_assignments)  *)
@@ -2072,5 +2139,20 @@ Theorem swap_noninterfering_assignments: forall l1 l2 a1 a2,
     (l2 ::= a2;; l1 ::= a1).
 Proof.
 (* Hint: You'll need [functional_extensionality] *)
-(* FILL IN HERE *) Admitted.
+  split; intros;
+  inversion H2; subst; inversion H5; subst; inversion H8; subst;
+  assert (update (update st l1 (aeval st a1)) l2
+                 (aeval (update st l1 (aeval st a1)) a2) =
+          update (update st l2 (aeval st a2)) l1
+                 (aeval (update st l2 (aeval st a2)) a1));
+  apply aeval_weakening with (st := st) (ni := (aeval st a1)) in H0;
+  apply aeval_weakening with (st := st) (ni := (aeval st a2)) in H1;
+  try (rewrite H0; rewrite H1;
+  apply functional_extensionality; intros;
+  rewrite update_permute); try reflexivity; try assumption;
+  [rewrite H3 | rewrite <- H3];
+  [apply E_Seq with (update st l2 (aeval st a2)) |
+   apply E_Seq with (update st l1 (aeval st a1))];
+  apply E_Ass; reflexivity; apply E_Ass; reflexivity.
+Qed.
 (** [] *)
