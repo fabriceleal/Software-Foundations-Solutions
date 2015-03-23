@@ -50,14 +50,18 @@ Lemma H_Consequence_pre : forall (P Q P': Assertion) c,
     (forall st, P st -> P' st) ->
     hoare_proof P c Q.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. eapply H_Consequence. apply X. assumption.
+  intros; assumption.
+Qed.
 
 Lemma H_Consequence_post  : forall (P Q Q' : Assertion) c,
     hoare_proof P c Q' ->
     (forall st, Q' st -> Q st) ->
     hoare_proof P c Q.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. eapply H_Consequence. apply X.  intros; assumption.
+  assumption.
+Qed.
 
 
 (** Now, for example, let's construct a proof object representing a
@@ -66,12 +70,12 @@ Proof.
     We can use Coq's tactics to help us construct the proof object. *)
 
 Example sample_proof
-	     : hoare_proof
-		 (assn_sub X (APlus (AId X) (ANum 1))
-		   (assn_sub X (APlus (AId X) (ANum 2))
-		     (fun st => st X = 3) ))
-		 (X ::= APlus (AId X) (ANum 1);; (X ::= APlus (AId X) (ANum 2)))
-		 (fun st => st X = 3).
+             : hoare_proof
+                 (assn_sub X (APlus (AId X) (ANum 1))
+                   (assn_sub X (APlus (AId X) (ANum 2))
+                     (fun st => st X = 3) ))
+                 (X ::= APlus (AId X) (ANum 1);; (X ::= APlus (AId X) (ANum 2)))
+                 (fun st => st X = 3).
 Proof.
   eapply H_Seq; apply H_Asgn.
 Qed.
@@ -98,7 +102,16 @@ Print sample_proof.
 Theorem hoare_proof_sound : forall P c Q,
   hoare_proof P c Q -> {{P}} c {{Q}}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. induction X.
+  apply hoare_skip.
+  apply hoare_asgn.
+  eapply hoare_seq. eauto. assumption.
+  apply hoare_if; assumption.
+  apply hoare_while. assumption.
+  eapply hoare_consequence_post.
+  eapply hoare_consequence_pre.
+  eauto. assumption. assumption.
+Qed.
 (** [] *)
 
 (** We can also use Coq's reasoning facilities to prove metatheorems
@@ -208,14 +221,20 @@ Definition wp (c:com) (Q:Assertion) : Assertion :=
 
 Lemma wp_is_precondition: forall c Q,
   {{wp c Q}} c {{Q}}.
-(* FILL IN HERE *) Admitted.
+Proof.
+  unfold wp. intros c Q st st' H H1.
+  apply H1. assumption.
+Qed.
 (** [] *)
 
 (** **** Exercise: 1 star (wp_is_weakest)  *)
 
 Lemma wp_is_weakest: forall c Q P',
    {{P'}} c {{Q}} -> forall st, P' st -> wp c Q st.
-(* FILL IN HERE *) Admitted.
+Proof.
+  unfold hoare_triple. unfold wp.
+  intros. eapply H. eauto. assumption.
+Qed.
 
 (** The following utility lemma will also be useful. *)
 
@@ -249,9 +268,26 @@ Proof.
     apply H_Seq with (wp c2 Q).
      eapply IHc1.
        intros st st' E1 H. unfold wp. intros st'' E2.
-	 eapply HT. econstructor; eassumption. assumption.
+         eapply HT. econstructor; eassumption. assumption.
      eapply IHc2. intros st st' E1 H. apply H; assumption.
-  (* FILL IN HERE *) Admitted.
+  Case "IFB".
+    apply H_If.
+    apply IHc1. intros st H H1 H2. destruct H2.
+    eapply HT. apply E_IfTrue. eassumption. assumption. assumption.
+    apply IHc2. intros st H H1 H2. destruct H2.
+    eapply HT. apply E_IfFalse. eapply bassn_eval_false. eassumption.
+    assumption. assumption.
+  Case "WHILE".
+    eapply H_Consequence with (P' := wp (WHILE b DO c END) Q).
+    apply H_While. apply IHc. intros st st' H H'.
+    destruct H'. unfold wp in *. intros.
+    apply H0. eapply E_WhileLoop. assumption. eassumption.
+    assumption.
+    apply wp_is_weakest. assumption.
+    simpl. intros. destruct H.
+    apply wp_is_precondition with (WHILE b DO c END) st.
+    apply E_WhileEnd. apply bassn_eval_false. assumption. assumption.
+Qed.
 (** [] *)
 
 (** Finally, we might hope that our axiomatic Hoare logic is _decidable_;
@@ -278,4 +314,3 @@ Proof.
     better. *)
 
 (** $Date: 2014-12-31 11:17:56 -0500 (Wed, 31 Dec 2014) $ *)
-
