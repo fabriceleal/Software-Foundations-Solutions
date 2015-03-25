@@ -2,7 +2,7 @@
 
 Require Export Smallstep.
 
-Hint Constructors multi.  
+Hint Constructors multi.
 
 (** Our next major topic is _type systems_ -- static program
     analyses that classify expressions according to the "shapes" of
@@ -64,7 +64,7 @@ Inductive nvalue : tm -> Prop :=
 Definition value (t:tm) := bvalue t \/ nvalue t.
 
 Hint Constructors bvalue nvalue.
-Hint Unfold value.  
+Hint Unfold value.
 Hint Unfold extend.
 
 (* ###################################################################### *)
@@ -146,9 +146,9 @@ where "t1 '==>' t2" := (step t1 t2).
 
 Tactic Notation "step_cases" tactic(first) ident(c) :=
   first;
-  [ Case_aux c "ST_IfTrue" | Case_aux c "ST_IfFalse" | Case_aux c "ST_If" 
+  [ Case_aux c "ST_IfTrue" | Case_aux c "ST_IfFalse" | Case_aux c "ST_If"
   | Case_aux c "ST_Succ" | Case_aux c "ST_PredZero"
-  | Case_aux c "ST_PredSucc" | Case_aux c "ST_Pred" 
+  | Case_aux c "ST_PredSucc" | Case_aux c "ST_Pred"
   | Case_aux c "ST_IszeroZero" | Case_aux c "ST_IszeroSucc"
   | Case_aux c "ST_Iszero" ].
 
@@ -156,12 +156,12 @@ Hint Constructors step.
 (** Notice that the [step] relation doesn't care about whether
     expressions make global sense -- it just checks that the operation
     in the _next_ reduction step is being applied to the right kinds
-    of operands.  
+    of operands.
 
     For example, the term [succ true] (i.e., [tsucc ttrue] in the
     formal syntax) cannot take a step, but the almost as obviously
     nonsensical term
-       succ (if true then true else true) 
+       succ (if true then true else true)
     can take a step (once, before becoming stuck). *)
 
 (* ###################################################################### *)
@@ -185,7 +185,9 @@ Hint Unfold stuck.
 Example some_term_is_stuck :
   exists t, stuck t.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  exists (tsucc ttrue). unfold stuck. unfold normal_form. unfold not.
+  split; intros; solve by inversion 3.
+Qed.
 (** [] *)
 
 (** However, although values and normal forms are not the same in this
@@ -205,18 +207,41 @@ Proof.
 Lemma value_is_nf : forall t,
   value t -> step_normal_form t.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold normal_form. unfold not. intros. destruct H0.
+  generalize dependent x.
+  induction t; intros; try solve by inversion;
+  try (solve by inversion 2);
+  try (inversion H; try solve by inversion; inversion H1; subst;
+  inversion H0; subst; eauto).
+Qed.
+
 (** [] *)
 
 
 (** **** Exercise: 3 stars, optional (step_deterministic)  *)
 (** Using [value_is_nf], we can show that the [step] relation is
     also deterministic... *)
+Ltac find_eqn :=
+  match goal with
+    H1: forall x, ?P x -> ?L = ?R, H2: ?P ?X |- _ =>
+         rewrite (H1 X H2) in *
+  end.
 
 Theorem step_deterministic:
   deterministic step.
 Proof with eauto.
-  (* FILL IN HERE *) Admitted.
+  unfold deterministic. intros. generalize dependent y2.
+  induction H; intros;
+  try (inversion H0; subst;
+       try (solve by inversion)); try (find_eqn); try eauto;
+  try (inversion H2; subst; assert (value t1) by auto; apply value_is_nf in H1;
+       unfold normal_form in *; apply ex_falso_quodlibet; eauto);
+  try (inversion H2; subst; inversion H; subst; try solve by inversion;
+       inversion H; subst;
+       assert (value (tsucc t)) by auto; apply value_is_nf in H3;
+       unfold normal_form in *; apply ex_falso_quodlibet; eauto).
+Qed.
+
 (** [] *)
 
 
@@ -231,7 +256,7 @@ Proof with eauto.
     _typing relation_ that relates terms to the types (either numeric
     or boolean) of their final results.  *)
 
-Inductive ty : Type := 
+Inductive ty : Type :=
   | TBool : ty
   | TNat : ty.
 
@@ -240,7 +265,7 @@ Inductive ty : Type :=
     called a "turnstile".  (Below, we're going to see richer typing
     relations where an additional "context" argument is written to the
     left of the turnstile.  Here, the context is always empty.) *)
-(** 
+(**
                            ----------------                            (T_True)
                            |- true \in Bool
 
@@ -253,7 +278,7 @@ Inductive ty : Type :=
 
                              ------------                              (T_Zero)
                              |- 0 \in Nat
-                              
+
                             |- t1 \in Nat
                           ------------------                           (T_Succ)
                           |- succ t1 \in Nat
@@ -270,16 +295,16 @@ Inductive ty : Type :=
 Reserved Notation "'|-' t '\in' T" (at level 40).
 
 Inductive has_type : tm -> ty -> Prop :=
-  | T_True : 
+  | T_True :
        |- ttrue \in TBool
-  | T_False : 
+  | T_False :
        |- tfalse \in TBool
   | T_If : forall t1 t2 t3 T,
        |- t1 \in TBool ->
        |- t2 \in T ->
        |- t3 \in T ->
        |- tif t1 t2 t3 \in T
-  | T_Zero : 
+  | T_Zero :
        |- tzero \in TNat
   | T_Succ : forall t1,
        |- t1 \in TNat ->
@@ -308,21 +333,21 @@ Hint Constructors has_type.
     _conservative_ (or _static_) approximation: it does not calculate
     the type of the normal form of a term. *)
 
-Example has_type_1 : 
+Example has_type_1 :
   |- tif tfalse tzero (tsucc tzero) \in TNat.
-Proof. 
-  apply T_If. 
+Proof.
+  apply T_If.
     apply T_False.
     apply T_Zero.
     apply T_Succ.
-      apply T_Zero.  
+      apply T_Zero.
 Qed.
 
 (** (Since we've included all the constructors of the typing relation
     in the hint database, the [auto] tactic can actually find this
     proof automatically.) *)
 
-Example has_type_not : 
+Example has_type_not :
   ~ (|- tif tfalse tzero ttrue \in TBool).
 Proof.
   intros Contra. solve by inversion 2.  Qed.
@@ -330,9 +355,10 @@ Proof.
 (** **** Exercise: 1 star, optional (succ_hastype_nat__hastype_nat)  *)
 Example succ_hastype_nat__hastype_nat : forall t,
   |- tsucc t \in TNat ->
-  |- t \in TNat.  
+  |- t \in TNat.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. inversion H; auto.
+Qed.
 (** [] *)
 
 (* ###################################################################### *)
@@ -356,9 +382,9 @@ Lemma nat_canonical : forall t,
 Proof.
   intros t HT HV.
   inversion HV.
-  inversion H; subst; inversion HT.   
+  inversion H; subst; inversion HT.
 
-  auto.  
+  auto.
 Qed.
 
 (* ###################################################################### *)
@@ -391,13 +417,34 @@ Proof with auto.
     SCase "t1 can take a step".
       inversion H as [t1' H1].
       exists (tif t1' t2 t3)...
-  (* FILL IN HERE *) Admitted.
+  Case "T_Succ".
+    destruct IHHT.
+    SCase "t1 value". left. right. constructor.
+    apply (nat_canonical t1 HT). auto.
+    SCase "t1 can take a step".
+    right. inversion H. exists (tsucc x)...
+  Case "T_Pred".
+    destruct IHHT.
+    SCase "t1 value". right.
+    assert (nvalue t1). apply (nat_canonical t1 HT). auto.
+    inversion H0. exists tzero... exists t...
+    SCase "t1 can take a step".
+    right. inversion H. exists (tpred x)...
+  Case "T_Iszero".
+    destruct IHHT.
+    SCase "t1 value". right. assert (nvalue t1).
+    apply (nat_canonical t1 HT). auto. inversion H0.
+    exists ttrue... exists tfalse...
+    SCase "t1 can take a step". right.
+    destruct H. exists (tiszero x)...
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (finish_progress_informal)  *)
 (** Complete the corresponding informal proof: *)
 
-(** _Theorem_: If [|- t \in T], then either [t] is a value or else 
+(** _Theorem_: If [|- t \in T], then either [t] is a value or else
     [t ==> t'] for some [t']. *)
 
 (** _Proof_: By induction on a derivation of [|- t \in T].
@@ -405,10 +452,10 @@ Proof with auto.
       - If the last rule in the derivation is [T_If], then [t = if t1
         then t2 else t3], with [|- t1 \in Bool], [|- t2 \in T] and [|- t3
         \in T].  By the IH, either [t1] is a value or else [t1] can step
-        to some [t1'].  
+        to some [t1'].
 
             - If [t1] is a value, then by the canonical forms lemmas
-              and the fact that [|- t1 \in Bool] we have that [t1] 
+              and the fact that [|- t1 \in Bool] we have that [t1]
               is a [bvalue] -- i.e., it is either [true] or [false].
               If [t1 = true], then [t] steps to [t2] by [ST_IfTrue],
               while if [t1 = false], then [t] steps to [t3] by
@@ -418,7 +465,7 @@ Proof with auto.
             - If [t1] itself can take a step, then, by [ST_If], so can
               [t].
 
-    (* FILL IN HERE *)
+...
 [] *)
 
 (** This is more interesting than the strong progress theorem that we
@@ -429,13 +476,14 @@ Proof with auto.
 (** **** Exercise: 1 star (step_review)  *)
 (** Quick review.  Answer _true_ or _false_.  In this language...
       - Every well-typed normal form is a value.
-
+      true
       - Every value is a normal form.
-
+      true
       - The single-step evaluation relation is
         a partial function (i.e., it is deterministic).
-
+      true
       - The single-step evaluation relation is a _total_ function.
+      false
 
 *)
 (** [] *)
@@ -465,9 +513,9 @@ Theorem preservation : forall t t' T,
 Proof with auto.
   intros t t' T HT HE.
   generalize dependent t'.
-  has_type_cases (induction HT) Case; 
+  has_type_cases (induction HT) Case;
          (* every case needs to introduce a couple of things *)
-         intros t' HE; 
+         intros t' HE;
          (* and we can deal with several impossible
             cases all at once *)
          try (solve by inversion).
@@ -476,7 +524,10 @@ Proof with auto.
       SCase "ST_IfFalse". assumption.
       SCase "ST_If". apply T_If; try assumption.
         apply IHHT1; assumption.
-    (* FILL IN HERE *) Admitted.
+    Case "T_Succ". inversion HE; subst...
+    Case "T_Pred". inversion HE; subst... inversion HT...
+    Case "T_Iszero". inversion HE...
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (finish_preservation_informal)  *)
@@ -488,7 +539,7 @@ Proof with auto.
 
       - If the last rule in the derivation is [T_If], then [t = if t1
         then t2 else t3], with [|- t1 \in Bool], [|- t2 \in T] and [|- t3
-        \in T].  
+        \in T].
 
         Inspecting the rules for the small-step reduction relation and
         remembering that [t] has the form [if ...], we see that the
@@ -506,7 +557,7 @@ Proof with auto.
              by the IH, [|- t1' \in Bool].  The [T_If] rule then gives us
              [|- if t1' then t2 else t3 \in T], as required.
 
-    (* FILL IN HERE *)
+...
 [] *)
 
 (** **** Exercise: 3 stars (preservation_alternate_proof)  *)
@@ -522,7 +573,11 @@ Theorem preservation' : forall t t' T,
   t ==> t' ->
   |- t' \in T.
 Proof with eauto.
-  (* FILL IN HERE *) Admitted.
+  intros. generalize dependent T.
+  induction H0; intros; inversion H; subst...
+  inversion H0... inversion H0. inversion H3...
+  inversion H0... inversion H0...
+Qed.
 (** [] *)
 
 (* ###################################################################### *)
@@ -535,12 +590,12 @@ Definition multistep := (multi step).
 Notation "t1 '==>*' t2" := (multistep t1 t2) (at level 40).
 
 Corollary soundness : forall t t' T,
-  |- t \in T -> 
+  |- t \in T ->
   t ==>* t' ->
   ~(stuck t').
-Proof. 
+Proof.
   intros t t' T HT P. induction P; intros [R S].
-  destruct (progress x T HT); auto.   
+  destruct (progress x T HT); auto.
   apply IHP.  apply (preservation x y T HT H).
   unfold stuck. split; auto.   Qed.
 
@@ -557,17 +612,17 @@ Proof.
     relation [astep]. *)
 
 
-Definition amultistep st := multi (astep st). 
+Definition amultistep st := multi (astep st).
 Notation " t '/' st '==>a*' t' " := (amultistep st t t')
   (at level 40, st at level 39).
 
-Example astep_example1 : 
-  (APlus (ANum 3) (AMult (ANum 3) (ANum 4))) / empty_state 
+Example astep_example1 :
+  (APlus (ANum 3) (AMult (ANum 3) (ANum 4))) / empty_state
   ==>a* (ANum 15).
 Proof.
   apply multi_step with (APlus (ANum 3) (ANum 12)).
-    apply AS_Plus2. 
-      apply av_num. 
+    apply AS_Plus2.
+      apply av_num.
       apply AS_Mult.
   apply multi_step with (ANum 15).
     apply AS_Plus.
@@ -580,8 +635,8 @@ Qed.
     them. *)
 
 Hint Constructors astep aval.
-Example astep_example1' : 
-  (APlus (ANum 3) (AMult (ANum 3) (ANum 4))) / empty_state 
+Example astep_example1' :
+  (APlus (ANum 3) (AMult (ANum 3) (ANum 4))) / empty_state
   ==>a* (ANum 15).
 Proof.
   eapply multi_step. auto. simpl.
@@ -596,19 +651,19 @@ Qed.
     evaluated. *)
 
 Tactic Notation "print_goal" := match goal with |- ?x => idtac x end.
-Tactic Notation "normalize" := 
-   repeat (print_goal; eapply multi_step ; 
+Tactic Notation "normalize" :=
+   repeat (print_goal; eapply multi_step ;
              [ (eauto 10; fail) | (instantiate; simpl)]);
    apply multi_refl.
 
 
-Example astep_example1'' : 
-  (APlus (ANum 3) (AMult (ANum 3) (ANum 4))) / empty_state 
+Example astep_example1'' :
+  (APlus (ANum 3) (AMult (ANum 3) (ANum 4))) / empty_state
   ==>a* (ANum 15).
 Proof.
   normalize.
-  (* At this point in the proof script, the Coq response shows 
-     a trace of how the expression evaluated. 
+  (* At this point in the proof script, the Coq response shows
+     a trace of how the expression evaluated.
 
    (APlus (ANum 3) (AMult (ANum 3) (ANum 4)) / empty_state ==>a* ANum 15)
    (multi (astep empty_state) (APlus (ANum 3) (ANum 12)) (ANum 15))
@@ -622,7 +677,7 @@ Qed.
     existential variable in it. *)
 
 Example astep_example1''' : exists e',
-  (APlus (ANum 3) (AMult (ANum 3) (ANum 4))) / empty_state 
+  (APlus (ANum 3) (AMult (ANum 3) (ANum 4))) / empty_state
   ==>a* e'.
 Proof.
   eapply ex_intro. normalize.
@@ -640,10 +695,10 @@ Qed.
 
 (** **** Exercise: 1 star (normalize_ex)  *)
 Theorem normalize_ex : exists e',
-  (AMult (ANum 3) (AMult (ANum 2) (ANum 1))) / empty_state 
+  (AMult (ANum 3) (AMult (ANum 2) (ANum 1))) / empty_state
   ==>a* e'.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  eexists. normalize. Qed.
 
 (** [] *)
 
@@ -651,10 +706,12 @@ Proof.
 (** For comparison, prove it using [apply] instead of [eapply]. *)
 
 Theorem normalize_ex' : exists e',
-  (AMult (ANum 3) (AMult (ANum 2) (ANum 1))) / empty_state 
+  (AMult (ANum 3) (AMult (ANum 2) (ANum 1))) / empty_state
   ==>a* e'.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  exists (AMult (ANum 3) (AMult (ANum 2) (ANum 1))).
+  apply multi_refl.
+Qed.
 (** [] *)
 
 
@@ -669,14 +726,23 @@ Proof.
     not, give a counter-example.  (You do not need to prove your
     counter-example in Coq, but feel free to do so if you like.)
 
-    (* FILL IN HERE *)
+tif tfalse tzero ttrue
+
 [] *)
+Theorem subject_expansion: ~ forall t t' T,
+  t ==> t' ->
+  |- t' \in T ->
+  |- t \in T.
 
-
+Proof with eauto.
+  unfold not. intros.
+  assert (|- (tif tfalse tzero ttrue) \in TBool).
+  eapply H; auto. solve by inversion 2.
+Qed.
 
 
 (** **** Exercise: 2 stars (variation1)  *)
-(** Suppose, that we add this new rule to the typing relation: 
+(** Suppose, that we add this new rule to the typing relation:
       | T_SuccBool : forall t,
            |- t \in TBool ->
            |- tsucc t \in TBool
@@ -685,20 +751,21 @@ Proof.
    else "becomes false." If a property becomes false, give a
    counterexample.
       - Determinism of [step]
-
+      true
       - Progress
-
+      tsucc tfalse
       - Preservation
-
+      true
 [] *)
 
 (** **** Exercise: 2 stars (variation2)  *)
-(** Suppose, instead, that we add this new rule to the [step] relation: 
+(** Suppose, instead, that we add this new rule to the [step] relation:
       | ST_Funny1 : forall t2 t3,
            (tif ttrue t2 t3) ==> t3
    Which of the above properties become false in the presence of
    this rule?  For each one that does, give a counter-example.
 
+Determinism, tif ttrue ttrue tfalse ==> ttrue/tfalse
 [] *)
 
 (** **** Exercise: 2 stars, optional (variation3)  *)
@@ -709,37 +776,42 @@ Proof.
    Which of the above properties become false in the presence of
    this rule?  For each one that does, give a counter-example.
 
+Dterminism, tif (tiszero tzero) (tiszero tzero) ttrue ==>
+tif ttrue (tiszero tzero) ttrue/tif (tiszero tzero) ttrue
 [] *)
 
 (** **** Exercise: 2 stars, optional (variation4)  *)
 (** Suppose instead that we add this rule:
-      | ST_Funny3 : 
+      | ST_Funny3 :
           (tpred tfalse) ==> (tpred (tpred tfalse))
    Which of the above properties become false in the presence of
    this rule?  For each one that does, give a counter-example.
 
+None
 [] *)
 
 (** **** Exercise: 2 stars, optional (variation5)  *)
 (** Suppose instead that we add this rule:
-   
-      | T_Funny4 : 
+
+      | T_Funny4 :
             |- tzero \in TBool
    ]]
    Which of the above properties become false in the presence of
    this rule?  For each one that does, give a counter-example.
 
+Progress, tif tzero ttrue ttrue
 [] *)
 
 (** **** Exercise: 2 stars, optional (variation6)  *)
 (** Suppose instead that we add this rule:
-   
-      | T_Funny5 : 
+
+      | T_Funny5 :
             |- tpred tzero \in TBool
    ]]
    Which of the above properties become false in the presence of
    this rule?  For each one that does, give a counter-example.
 
+Preservation, tpred tzero ==> tzero
 [] *)
 
 (** **** Exercise: 3 stars, optional (more_variations)  *)
@@ -747,6 +819,10 @@ Proof.
     the ones above.  Try to find ways of selectively breaking
     properties -- i.e., ways of changing the definitions that
     break just one of the properties and leave the others alone.
+
+To break determinism, add rules to step, with correct type. (short-cut steps)
+To break progress, add rules about ill-typed form (can't be stepped) to type
+To break preservation, add rules about ill-typed form (can be stepped) to type
 [] *)
 
 (** **** Exercise: 1 star (remove_predzero)  *)
@@ -754,9 +830,9 @@ Proof.
     might feel that it makes more sense for the predecessor of zero to
     be undefined, rather than being defined to be zero.  Can we
     achieve this simply by removing the rule from the definition of
-    [step]?  Would doing so create any problems elsewhere? 
+    [step]?  Would doing so create any problems elsewhere?
 
-(* FILL IN HERE *)
+it breaks progress property, i.e. tpred tzero is not a value, and can't be stepped.
 [] *)
 
 (** **** Exercise: 4 stars, advanced (prog_pres_bigstep)  *)
@@ -764,7 +840,8 @@ Proof.
     What are the appropriate analogs of the progress and preservation
     properties?
 
-(* FILL IN HERE *)
+progress : if type is correct, eval finishes with a value
+preservation : if type is correct, the type of the final value is the same as the init type.
 [] *)
 
 (** $Date: 2014-12-31 11:17:56 -0500 (Wed, 31 Dec 2014) $ *)

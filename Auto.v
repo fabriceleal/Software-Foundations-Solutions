@@ -2,28 +2,28 @@
 
 Require Export Imp.
 
-(** Up to now, we've continued to use a quite restricted set of 
-Coq's tactic facilities. In this chapter, we'll learn more about 
-two very powerful features of Coq's tactic language: 
+(** Up to now, we've continued to use a quite restricted set of
+Coq's tactic facilities. In this chapter, we'll learn more about
+two very powerful features of Coq's tactic language:
 proof search via the [auto] and [eauto] tactics, and
 automated forward reasoning via the [Ltac] hypothesis matching
 machinery. Using these features together with Ltac's scripting facilities
 will enable us to make our proofs startlingly short!  Used properly,
 they can also make proofs more maintainable and robust in the face
-of incremental changes to underlying definitions. 
+of incremental changes to underlying definitions.
 
 There's a third major source of automation we haven't
 fully studied yet, namely built-in decision procedures for specific
 kinds of problems: [omega] is one example, but there are others.
-This topic will be defered for a while longer. 
+This topic will be defered for a while longer.
 
 *)
 
-(** Our motivating example will be this proof, repeated with 
+(** Our motivating example will be this proof, repeated with
     just a few small changes from [Imp].  We will try to simplify
     this proof in several stages. *)
 
-Ltac inv H := inversion H; subst; clear H. 
+Ltac inv H := inversion H; subst; clear H.
 
 Theorem ceval_deterministic: forall c st st1 st2,
      c / st || st1  ->
@@ -33,7 +33,7 @@ Proof.
   intros c st st1 st2 E1 E2;
   generalize dependent st2;
   ceval_cases (induction E1) Case;
-           intros st2 E2; inv E2. 
+           intros st2 E2; inv E2.
   Case "E_Skip". reflexivity.
   Case "E_Ass". reflexivity.
   Case "E_Seq".
@@ -75,22 +75,22 @@ Proof.
     or [(e)constructor] to find a matching constructor.) *)
 
 
-Example auto_example_1 : forall (P Q R: Prop), (P -> Q) -> (Q -> R) -> P -> R. 
-Proof.  
-  intros P Q R H1 H2 H3. 
+Example auto_example_1 : forall (P Q R: Prop), (P -> Q) -> (Q -> R) -> P -> R.
+Proof.
+  intros P Q R H1 H2 H3.
   apply H2.  apply H1. assumption.
 Qed.
 
 (** The [auto] tactic frees us from this drudgery by _searching_
    for a sequence of applications that will prove the goal *)
 
-Example auto_example_1' : forall (P Q R: Prop), (P -> Q) -> (Q -> R) -> P -> R. 
-Proof.  
-  intros P Q R H1 H2 H3. 
-  auto. 
+Example auto_example_1' : forall (P Q R: Prop), (P -> Q) -> (Q -> R) -> P -> R.
+Proof.
+  intros P Q R H1 H2 H3.
+  auto.
 Qed.
 
-(** The [auto] tactic solves goals that are solvable by any combination of 
+(** The [auto] tactic solves goals that are solvable by any combination of
      - [intros],
      - [apply] (with a local hypothesis, by default).
 
@@ -119,9 +119,9 @@ Proof. auto. Qed.
 (** Search can take an arbitrarily long time, so there are limits to
     how far [auto] will search by default *)
 
-Example auto_example_3 : forall (P Q R S T U: Prop), 
-                           (P -> Q) -> (Q -> R) -> (R -> S) -> 
-                           (S -> T) -> (T -> U) -> P -> U. 
+Example auto_example_3 : forall (P Q R S T U: Prop),
+                           (P -> Q) -> (Q -> R) -> (R -> S) ->
+                           (S -> T) -> (T -> U) -> P -> U.
 Proof.
   auto. (* When it cannot solve the goal, does nothing! *)
   auto 6.  (* Optional argument says how deep to search (default depth is 5) *)
@@ -158,13 +158,13 @@ Lemma le_antisym : forall n m: nat, (n <= m /\ m <= n) -> n = m.
 Proof. intros. omega. Qed.
 
 Example auto_example_6 : forall n m p : nat,
-  (n<= p -> (n <= m /\ m <= n)) -> 
-  n <= p -> 
-  n = m. 
+  (n<= p -> (n <= m /\ m <= n)) ->
+  n <= p ->
+  n = m.
 Proof.
   intros.
   auto. (* does nothing: auto doesn't destruct hypotheses! *)
-  auto using le_antisym. 
+  auto using le_antisym.
 Qed.
 
 
@@ -185,59 +185,59 @@ Qed.
     uses of [d] and enable further possibilities for applying
     lemmas that it knows about. *)
 
-Hint Resolve le_antisym. 
+Hint Resolve le_antisym.
 
 Example auto_example_6' : forall n m p : nat,
-  (n<= p -> (n <= m /\ m <= n)) -> 
-  n <= p -> 
-  n = m. 
+  (n<= p -> (n <= m /\ m <= n)) ->
+  n <= p ->
+  n = m.
 Proof.
   intros.
   auto. (* picks up hint from database *)
 Qed.
 
-Definition is_fortytwo x := x = 42. 
+Definition is_fortytwo x := x = 42.
 
 Example auto_example_7: forall x, (x <= 42 /\ 42 <= x) -> is_fortytwo x.
 Proof.
   auto.  (* does nothing *)
 Abort.
 
-Hint Unfold is_fortytwo. 
+Hint Unfold is_fortytwo.
 
 Example auto_example_7' : forall x, (x <= 42 /\ 42 <= x) -> is_fortytwo x.
 Proof.
   info_auto.
 Qed.
 
-Hint Constructors ceval. 
+Hint Constructors ceval.
 
-Definition st12 := update (update empty_state X 1) Y 2. 
+Definition st12 := update (update empty_state X 1) Y 2.
 Definition st21 := update (update empty_state X 2) Y 1.
 
 Example auto_example_8 : exists s',
   (IFB (BLe (AId X) (AId Y))
     THEN (Z ::= AMinus (AId Y) (AId X))
     ELSE (Y ::= APlus (AId X) (AId Z))
-  FI) / st21 || s'. 
+  FI) / st21 || s'.
 Proof.
-  eexists. info_auto. 
+  eexists. info_auto.
 Qed.
 
 Example auto_example_8' : exists s',
   (IFB (BLe (AId X) (AId Y))
     THEN (Z ::= AMinus (AId Y) (AId X))
     ELSE (Y ::= APlus (AId X) (AId Z))
-  FI) / st12 || s'. 
+  FI) / st12 || s'.
 Proof.
-  eexists. info_auto. 
+  eexists. info_auto.
 Qed.
 
 
 (** Now let's take a pass over [ceval_deterministic] using [auto]
     to simplify the proof script. We see that all simple sequences of hypothesis
     applications and all uses of [reflexivity] can be replaced by [auto],
-    which we add to the default tactic to be applied to each case. 
+    which we add to the default tactic to be applied to each case.
 *)
 
 Theorem ceval_deterministic': forall c st st1 st2,
@@ -251,9 +251,9 @@ Proof.
            intros st2 E2; inv E2; auto.
   Case "E_Seq".
     assert (st' = st'0) as EQ1.
-      SCase "Proof of assertion". auto. 
+      SCase "Proof of assertion". auto.
     subst st'0.
-    auto. 
+    auto.
   Case "E_IfTrue".
     SCase "b evaluates to false (contradiction)".
       rewrite H in H5. inversion H5.
@@ -268,15 +268,15 @@ Proof.
       rewrite H in H4. inversion H4.
     SCase "b evaluates to true".
       assert (st' = st'0) as EQ1.
-        SSCase "Proof of assertion". auto. 
+        SSCase "Proof of assertion". auto.
       subst st'0.
-      auto. 
+      auto.
 Qed.
 
 (** When we are using a particular tactic many times in a proof,
     we can use a variant of the [Proof] command to make that tactic
-    into a default within the proof. 
-    Saying [Proof with t] (where [t] is an arbitrary tactic) 
+    into a default within the proof.
+    Saying [Proof with t] (where [t] is an arbitrary tactic)
     allows us to use [t1...] as a shorthand for [t1;t] within the proof.
     As an illustration, here is an alternate version of the previous proof,
     using [Proof with auto].
@@ -321,25 +321,25 @@ Qed.
 
     [H1: beval st b = false]
 
-    and 
+    and
 
     [H2: beval st b = true]
 
     as hypotheses.  The contradiction is evident, but demonstrating it
     is a little complicated: we have to locate the two hypotheses [H1] and [H2]
     and do a [rewrite] following by an [inversion].  We'd like to automate
-    this process.  
+    this process.
 
     Note: In fact, Coq has a built-in tactic [congruence] that will do the
     job.  But we'll ignore the existence of this tactic for now, in order
     to demonstrate how to build forward search tactics by hand.
 
-*)   
+*)
 
 (** As a first step, we can abstract out the piece of script in question by
     writing a small amount of paramerized Ltac. *)
 
-Ltac rwinv H1 H2 := rewrite H1 in H2; inv H2. 
+Ltac rwinv H1 H2 := rewrite H1 in H2; inv H2.
 
 Theorem ceval_deterministic'': forall c st st1 st2,
      c / st || st1  ->
@@ -352,21 +352,21 @@ Proof.
            intros st2 E2; inv E2; auto.
   Case "E_Seq".
     assert (st' = st'0) as EQ1.
-      SCase "Proof of assertion". auto. 
+      SCase "Proof of assertion". auto.
     subst st'0.
-    auto. 
+    auto.
   Case "E_IfTrue".
     SCase "b evaluates to false (contradiction)".
-      rwinv H H5. 
+      rwinv H H5.
   Case "E_IfFalse".
     SCase "b evaluates to true (contradiction)".
-      rwinv H H5. 
+      rwinv H H5.
   Case "E_WhileEnd".
     SCase "b evaluates to true (contradiction)".
-      rwinv H H2. 
+      rwinv H H2.
   Case "E_WhileLoop".
     SCase "b evaluates to false (contradiction)".
-      rwinv H H4. 
+      rwinv H H4.
     SCase "b evaluates to true".
       assert (st' = st'0) as EQ1.
         SSCase "Proof of assertion". auto.
@@ -381,16 +381,16 @@ Proof.
 Ltac find_rwinv :=
   match goal with
     H1: ?E = true, H2: ?E = false |- _ => rwinv H1 H2
-  end. 
+  end.
 
 (** In words, this [match goal] looks for two (distinct) hypotheses that have
-    the form of equalities with the same arbitrary expression [E] on the 
+    the form of equalities with the same arbitrary expression [E] on the
     left and conflicting boolean values on the right; if such hypotheses are
     found, it binds [H1] and [H2] to their names, and applies the tactic
-    after the [=>]. 
+    after the [=>].
 
     Adding this tactic to our default string handles all the contradiction cases. *)
-    
+
 Theorem ceval_deterministic''': forall c st st1 st2,
      c / st || st1  ->
      c / st || st2 ->
@@ -402,17 +402,17 @@ Proof.
            intros st2 E2; inv E2; try find_rwinv; auto.
   Case "E_Seq".
     assert (st' = st'0) as EQ1.
-      SCase "Proof of assertion". auto. 
+      SCase "Proof of assertion". auto.
     subst st'0.
-    auto. 
+    auto.
   Case "E_WhileLoop".
     SCase "b evaluates to true".
       assert (st' = st'0) as EQ1.
-        SSCase "Proof of assertion". auto. 
+        SSCase "Proof of assertion". auto.
       subst st'0.
       auto. Qed.
 
-(** Finally, let's see about the remaining cases. Each of them involves 
+(** Finally, let's see about the remaining cases. Each of them involves
     applying a conditional hypothesis to extract an equality. Currently
     we have phrased these as assertions, so that we have to predict what
     the resulting equality will be (although we can then use [auto]
@@ -435,29 +435,29 @@ Proof.
     SCase "b evaluates to true".
       rewrite (IHE1_1 st'0 H3) in *. auto. Qed.
 
-(** Now we can automate the task of finding the relevant hypotheses to 
+(** Now we can automate the task of finding the relevant hypotheses to
     rewrite with. *)
 
 Ltac find_eqn :=
   match goal with
-    H1: forall x, ?P x -> ?L = ?R, H2: ?P ?X |- _ => 
-         rewrite (H1 X H2) in * 
+    H1: forall x, ?P x -> ?L = ?R, H2: ?P ?X |- _ =>
+         rewrite (H1 X H2) in *
   end.
 
 (** But there are several pairs of hypotheses that have the right
     general form, and it seems tricky to pick out the ones we actually need.
     A key trick is to realize that we can _try them all_!
-    Here's how this works: 
+    Here's how this works:
 
     - [rewrite] will fail given a trivial equation of the form [X = X].
-    - each execution of [match goal] will keep trying to find a valid pair of 
+    - each execution of [match goal] will keep trying to find a valid pair of
         hypotheses until the tactic on the RHS of the match succeeds;
         if there are no such pairs, it fails.
-    - we can wrap the whole thing in a [repeat] which will keep 
-        doing useful rewrites until only trivial ones are left. 
+    - we can wrap the whole thing in a [repeat] which will keep
+        doing useful rewrites until only trivial ones are left.
 *)
 
-  
+
 Theorem ceval_deterministic''''': forall c st st1 st2,
      c / st || st1  ->
      c / st || st2 ->
@@ -469,7 +469,7 @@ Proof.
            intros st2 E2; inv E2; try find_rwinv; repeat find_eqn; auto.
   Qed.
 
-(** The big pay-off in this approach is that our proof script 
+(** The big pay-off in this approach is that our proof script
     should be robust in the face of modest changes to our language.
     For example, we can add a [REPEAT] command to the language.
     (This was an exercise in [Hoare.v].) *)
@@ -495,17 +495,17 @@ Tactic Notation "com_cases" tactic(first) ident(c) :=
   | Case_aux c "IFB" | Case_aux c "WHILE"
   | Case_aux c "CRepeat" ].
 
-Notation "'SKIP'" := 
+Notation "'SKIP'" :=
   CSkip.
-Notation "c1 ; c2" := 
+Notation "c1 ; c2" :=
   (CSeq c1 c2) (at level 80, right associativity).
-Notation "X '::=' a" := 
+Notation "X '::=' a" :=
   (CAsgn X a) (at level 60).
-Notation "'WHILE' b 'DO' c 'END'" := 
+Notation "'WHILE' b 'DO' c 'END'" :=
   (CWhile b c) (at level 80, right associativity).
-Notation "'IFB' e1 'THEN' e2 'ELSE' e3 'FI'" := 
+Notation "'IFB' e1 'THEN' e2 'ELSE' e3 'FI'" :=
   (CIf e1 e2 e3) (at level 80, right associativity).
-Notation "'REPEAT' e1 'UNTIL' b2 'END'" := 
+Notation "'REPEAT' e1 'UNTIL' b2 'END'" :=
   (CRepeat e1 b2) (at level 80, right associativity).
 
 Inductive ceval : state -> com -> state -> Prop :=
@@ -550,11 +550,11 @@ Tactic Notation "ceval_cases" tactic(first) ident(c) :=
   [ Case_aux c "E_Skip" | Case_aux c "E_Ass"
   | Case_aux c "E_Seq"
   | Case_aux c "E_IfTrue" | Case_aux c "E_IfFalse"
-  | Case_aux c "E_WhileEnd" | Case_aux c "E_WhileLoop" 
-  | Case_aux c "E_RepeatEnd" | Case_aux c "E_RepeatLoop" 
+  | Case_aux c "E_WhileEnd" | Case_aux c "E_WhileLoop"
+  | Case_aux c "E_RepeatEnd" | Case_aux c "E_RepeatLoop"
 ].
 
-Notation "c1 '/' st '||' st'" := (ceval st c1 st') 
+Notation "c1 '/' st '||' st'" := (ceval st c1 st')
                                  (at level 40, st at level 39).
 
 
@@ -570,7 +570,7 @@ Proof.
   Case "E_RepeatEnd".
     SCase "b evaluates to false (contradiction)".
        find_rwinv.
-       (* oops: why didn't [find_rwinv] solve this for us already? 
+       (* oops: why didn't [find_rwinv] solve this for us already?
           answer: we did things in the wrong order. *)
   case "E_RepeatLoop".
      SCase "b evaluates to true (contradiction)".
@@ -587,7 +587,7 @@ Proof.
   ceval_cases (induction E1) Case;
            intros st2 E2; inv E2; repeat find_eqn; try find_rwinv; auto.
 Qed.
-      
+
 End Repeat.
 
 (** These examples just give a flavor of what "hyper-automation" can do...
