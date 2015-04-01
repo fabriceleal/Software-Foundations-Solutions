@@ -24,11 +24,11 @@ Import STLC.
 
 Fixpoint beq_ty (T1 T2:ty) : bool :=
   match T1,T2 with
-  | TBool, TBool => 
+  | TBool, TBool =>
       true
-  | TArrow T11 T12, TArrow T21 T22 => 
+  | TArrow T11 T12, TArrow T21 T22 =>
       andb (beq_ty T11 T21) (beq_ty T12 T22)
-  | _,_ => 
+  | _,_ =>
       false
   end.
 
@@ -80,7 +80,7 @@ Fixpoint type_check (Gamma:context) (t:tm) : option ty :=
   | ttrue => Some TBool
   | tfalse => Some TBool
   | tif x t f => match type_check Gamma x with
-                     | Some TBool => 
+                     | Some TBool =>
                        match type_check Gamma t, type_check Gamma f with
                          | Some T1, Some T2 =>
                            if beq_ty T1 T2 then Some T1 else None
@@ -134,7 +134,7 @@ Proof with eauto.
     try solve by inversion.
     apply beq_ty__eq in Heqb.
     inversion H0. subst. subst...
-Qed.    
+Qed.
 
 Theorem type_checking_complete : forall Gamma t T,
   has_type Gamma t T -> type_check Gamma t = Some T.
@@ -155,4 +155,3 @@ Qed.
 End STLCChecker.
 
 (** $Date: 2014-12-31 11:17:56 -0500 (Wed, 31 Dec 2014) $ *)
-
