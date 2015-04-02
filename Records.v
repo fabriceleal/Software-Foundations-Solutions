@@ -11,7 +11,7 @@ Require Export Stlc.
     treated records this way, it would be carried out in the parser,
     which we are eliding here), and anyway it is not very efficient.
     So it is also interesting to see how records can be treated as
-    first-class citizens of the language. 
+    first-class citizens of the language.
 
     Recall the informal definitions we gave before: *)
 
@@ -20,7 +20,7 @@ Require Export Stlc.
 <<
        t ::=                          Terms:
            | ...
-           | {i1=t1, ..., in=tn}         record 
+           | {i1=t1, ..., in=tn}         record
            | t.i                         projection
 
        v ::=                          Values:
@@ -30,10 +30,10 @@ Require Export Stlc.
        T ::=                          Types:
            | ...
            | {i1:T1, ..., in:Tn}         record type
->> 
+>>
    Reduction:
                                  ti ==> ti'                            (ST_Rcd)
-    --------------------------------------------------------------------  
+    --------------------------------------------------------------------
     {i1=v1, ..., im=vm, in=tn, ...} ==> {i1=v1, ..., im=vm, in=tn', ...}
 
                                  t1 ==> t1'
@@ -66,7 +66,7 @@ Module STLCExtendedRecords.
 Module FirstTry.
 
 Definition alist (X : Type) := list (id * X).
-  
+
 Inductive ty : Type :=
   | TBase     : id -> ty
   | TArrow    : ty -> ty -> ty
@@ -78,9 +78,9 @@ Inductive ty : Type :=
     any information about the [ty] elements of the list, making it
     useless for the proofs we want to do.  *)
 
-(* Check ty_ind. 
+(* Check ty_ind.
    ====>
-    ty_ind : 
+    ty_ind :
       forall P : ty -> Prop,
         (forall i : id, P (TBase i)) ->
         (forall t : ty, P t -> forall t0 : ty, P t0 -> P (TArrow t t0)) ->
@@ -147,7 +147,7 @@ Notation i2 := (Id 8).
 
 (** [{ i1:A->B, i2:A }] *)
 
-(* Check (TRCons i1 (TArrow A B) 
+(* Check (TRCons i1 (TArrow A B)
            (TRCons i2 A TRNil)). *)
 
 (* ###################################################################### *)
@@ -171,7 +171,7 @@ Definition weird_type := TRCons X A B.
     and [TRCons] at the outermost level. *)
 
 Inductive record_ty : ty -> Prop :=
-  | RTnil : 
+  | RTnil :
         record_ty TRNil
   | RTcons : forall i T1 T2,
         record_ty (TRCons i T1 T2).
@@ -330,7 +330,7 @@ Definition context := partial_map ty.
     of a type.
 
     For example, we check [well_formed_ty T] in the [T_Var] case,
-    because there is no inductive [has_type] call that would 
+    because there is no inductive [has_type] call that would
     enforce this.  Similarly, in the [T_Abs] case, we require a
     proof of [well_formed_ty T11] because the inductive call to
     [has_type] only guarantees that [T12] is well-formed.
@@ -347,11 +347,11 @@ Inductive has_type : context -> tm -> ty -> Prop :=
       Gamma |- (tvar x) \in T
   | T_Abs : forall Gamma x T11 T12 t12,
       well_formed_ty T11 ->
-      (extend Gamma x T11) |- t12 \in T12 -> 
+      (extend Gamma x T11) |- t12 \in T12 ->
       Gamma |- (tabs x T11 t12) \in (TArrow T11 T12)
   | T_App : forall T1 T2 Gamma t1 t2,
-      Gamma |- t1 \in (TArrow T1 T2) -> 
-      Gamma |- t2 \in T1 -> 
+      Gamma |- t1 \in (TArrow T1 T2) ->
+      Gamma |- t2 \in T1 ->
       Gamma |- (tapp t1 t2) \in T2
   (* records: *)
   | T_Proj : forall Gamma i t Ti Tr,
@@ -387,31 +387,39 @@ Tactic Notation "has_type_cases" tactic(first) ident(c) :=
     you may want to carry out the proof first using the basic
     features ([apply] instead of [eapply], in particular) and then
     perhaps compress it using automation. *)
+Hint Resolve extend_eq.
+Hint Extern 2 (has_type _ (tapp _ _) _) =>
+  eapply T_App; auto.
+Hint Extern 2 (has_type _ (tabs _ _ _) _) =>
+  eapply T_Abs; auto.
+Hint Extern 2 (has_type _ (tproj _ _) _) =>
+  eapply T_Proj; auto.
 
-Lemma typing_example_2 : 
-  empty |- 
+Lemma typing_example_2 :
+  empty |-
     (tapp (tabs a (TRCons i1 (TArrow A A)
                       (TRCons i2 (TArrow B B)
                        TRNil))
               (tproj (tvar a) i2))
-            (trcons i1 (tabs a A (tvar a)) 
+            (trcons i1 (tabs a A (tvar a))
             (trcons i2 (tabs a B (tvar a))
              trnil))) \in
     (TArrow B B).
-Proof. 
-  (* FILL IN HERE *) Admitted.
+Proof. eauto. Qed.
+
 
 (** Before starting to prove this fact (or the one above!), make sure
     you understand what it is saying. *)
 
-Example typing_nonexample : 
+Example typing_nonexample :
   ~ exists T,
-      (extend empty a (TRCons i2 (TArrow A A) 
+      (extend empty a (TRCons i2 (TArrow A A)
                                 TRNil)) |-
                (trcons i1 (tabs a B (tvar a)) (tvar a)) \in
                T.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros contra. solve by inversion 3.
+Qed.
 
 Example typing_nonexample_2 : forall y,
   ~ exists T,
@@ -421,7 +429,9 @@ Example typing_nonexample_2 : forall y,
                    (trcons i1 (tvar y) (trcons i2 (tvar y) trnil))) \in
            T.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros y contra. destruct contra.
+  inversion H; subst. solve by inversion 3.
+Qed.
 
 (* ###################################################################### *)
 (** ** Properties of Typing *)
@@ -460,7 +470,7 @@ Proof with eauto.
   intros Gamma t T Htyp.
   has_type_cases (induction Htyp) Case...
   Case "T_App".
-    inversion IHHtyp1... 
+    inversion IHHtyp1...
   Case "T_Proj".
     eapply wf_rcd_lookup...
 Qed.
@@ -488,9 +498,9 @@ Qed.
         Ti] we have [T = Ti].  It follows that [t] itself satisfies
         the theorem.
 
-      - On the other hand, suppose [i <> i0].  Then 
+      - On the other hand, suppose [i <> i0].  Then
         Tlookup i T = Tlookup i Tr
-        and 
+        and
         tlookup i t = tlookup i tr,
         so the result follows from the induction hypothesis. [] *)
 
@@ -515,9 +525,9 @@ Proof with eauto.
 (* ###################################################################### *)
 (** *** Progress *)
 
-Theorem progress : forall t T, 
+Theorem progress : forall t T,
      empty |- t \in T ->
-     value t \/ exists t', t ==> t'. 
+     value t \/ exists t', t ==> t'.
 Proof with eauto.
   (* Theorem: Suppose empty |- t : T.  Then either
        1. t is a value, or
@@ -537,32 +547,32 @@ Proof with eauto.
        which is a value. *)
     left...
   Case "T_App".
-    (* If the last rule applied was T_App, then [t = t1 t2], and we know 
+    (* If the last rule applied was T_App, then [t = t1 t2], and we know
        from the form of the rule that
          [empty |- t1 : T1 -> T2]
          [empty |- t2 : T1]
-       By the induction hypothesis, each of t1 and t2 either is a value 
+       By the induction hypothesis, each of t1 and t2 either is a value
        or can take a step. *)
     right.
     destruct IHHt1; subst...
     SCase "t1 is a value".
       destruct IHHt2; subst...
       SSCase "t2 is a value".
-      (* If both [t1] and [t2] are values, then we know that 
+      (* If both [t1] and [t2] are values, then we know that
          [t1 = tabs x T11 t12], since abstractions are the only values
-         that can have an arrow type.  But 
+         that can have an arrow type.  But
          [(tabs x T11 t12) t2 ==> [x:=t2]t12] by [ST_AppAbs]. *)
         inversion H; subst; try (solve by inversion).
         exists ([x:=t2]t12)...
       SSCase "t2 steps".
-        (* If [t1] is a value and [t2 ==> t2'], then [t1 t2 ==> t1 t2'] 
+        (* If [t1] is a value and [t2 ==> t2'], then [t1 t2 ==> t1 t2']
            by [ST_App2]. *)
         destruct H0 as [t2' Hstp]. exists (tapp t1 t2')...
     SCase "t1 steps".
       (* Finally, If [t1 ==> t1'], then [t1 t2 ==> t1' t2] by [ST_App1]. *)
       destruct H as [t1' Hstp]. exists (tapp t1' t2)...
   Case "T_Proj".
-    (* If the last rule in the given derivation is [T_Proj], then 
+    (* If the last rule in the given derivation is [T_Proj], then
        [t = tproj t i] and
            [empty |- t : (TRcd Tr)]
        By the IH, [t] either is a value or takes a step. *)
@@ -579,7 +589,7 @@ Proof with eauto.
          by [ST_Proj1]. *)
       destruct H0 as [t' Hstp]. exists (tproj t' i)...
   Case "T_RNil".
-    (* If the last rule in the given derivation is [T_RNil], then 
+    (* If the last rule in the given derivation is [T_RNil], then
        [t = trnil], which is a value. *)
     left...
   Case "T_RCons".
@@ -596,14 +606,14 @@ Proof with eauto.
          is a value as well. *)
         left...
       SSCase "tail steps".
-        (* If [t] is a value and [tr ==> tr'], then 
-           [trcons i t tr ==> trcons i t tr'] by 
+        (* If [t] is a value and [tr ==> tr'], then
+           [trcons i t tr ==> trcons i t tr'] by
            [ST_Rcd_Tail]. *)
         right. destruct H2 as [tr' Hstp].
         exists (trcons i t tr')...
-    SCase "head steps".      
-      (* If [t ==> t'], then 
-         [trcons i t tr ==> trcons i t' tr] 
+    SCase "head steps".
+      (* If [t ==> t'], then
+         [trcons i t tr ==> trcons i t' tr]
          by [ST_Rcd_Head]. *)
       right. destruct H1 as [t' Hstp].
       exists (trcons i t' tr)...  Qed.
@@ -640,7 +650,7 @@ Lemma context_invariance : forall Gamma Gamma' t S,
      Gamma' |- t \in S.
 Proof with eauto.
   intros. generalize dependent Gamma'.
-  has_type_cases (induction H) Case; 
+  has_type_cases (induction H) Case;
     intros Gamma' Heqv...
   Case "T_Var".
     apply T_Var... rewrite <- Heqv...
@@ -661,8 +671,8 @@ Proof with eauto.
   has_type_cases (induction Htyp) Case; inversion Hafi; subst...
   Case "T_Abs".
     destruct IHHtyp as [T' Hctx]... exists T'.
-    unfold extend in Hctx. 
-    rewrite neq_id in Hctx... 
+    unfold extend in Hctx.
+    rewrite neq_id in Hctx...
 Qed.
 
 (* ###################################################################### *)
@@ -673,9 +683,9 @@ Lemma substitution_preserves_typing : forall Gamma x U v t S,
      empty |- v \in U   ->
      Gamma |- ([x:=v]t) \in S.
 Proof with eauto.
-  (* Theorem: If Gamma,x:U |- t : S and empty |- v : U, then 
+  (* Theorem: If Gamma,x:U |- t : S and empty |- v : U, then
      Gamma |- ([x:=v]t) S. *)
-  intros Gamma x U v t S Htypt Htypv. 
+  intros Gamma x U v t S Htypt Htypv.
   generalize dependent Gamma. generalize dependent S.
   (* Proof: By induction on the term t.  Most cases follow directly
      from the IH, with the exception of tvar, tabs, trcons.
@@ -694,14 +704,14 @@ Proof with eauto.
        show that [Gamma |- [x:=v]y : S].
 
        There are two cases to consider: either [x=y] or [x<>y]. *)
-    destruct (eq_id_dec x y). 
+    destruct (eq_id_dec x y).
     SCase "x=y".
     (* If [x = y], then we know that [U = S], and that [[x:=v]y = v].
        So what we really must show is that if [empty |- v : U] then
        [Gamma |- v : U].  We have already proven a more general version
        of this theorem, called context invariance. *)
       subst.
-      unfold extend in H0. rewrite eq_id in H0. 
+      unfold extend in H0. rewrite eq_id in H0.
       inversion H0; subst. clear H0.
       eapply context_invariance...
       intros x Hcontra.
@@ -710,17 +720,17 @@ Proof with eauto.
     SCase "x<>y".
     (* If [x <> y], then [Gamma y = Some S] and the substitution has no
        effect.  We can show that [Gamma |- y : S] by [T_Var]. *)
-      apply T_Var... unfold extend in H0. rewrite neq_id in H0... 
+      apply T_Var... unfold extend in H0. rewrite neq_id in H0...
   Case "tabs".
     rename i into y. rename t into T11.
     (* If [t = tabs y T11 t0], then we know that
          [Gamma,x:U |- tabs y T11 t0 : T11->T12]
          [Gamma,x:U,y:T11 |- t0 : T12]
          [empty |- v : U]
-       As our IH, we know that forall S Gamma, 
+       As our IH, we know that forall S Gamma,
          [Gamma,x:U |- t0 : S -> Gamma |- [x:=v]t0 S].
-    
-       We can calculate that 
+
+       We can calculate that
          [x:=v]t = tabs y T11 (if beq_id x y then t0 else [x:=v]t0)
        And we must show that [Gamma |- [x:=v]t : T11->T12].  We know
        we will do so using [T_Abs], so it remains to be shown that:
@@ -745,7 +755,7 @@ Proof with eauto.
          [Gamma,y:T11 |- [x:=v]t0 : T12] *)
       apply IHt. eapply context_invariance...
       intros z Hafi. unfold extend.
-      destruct (eq_id_dec y z)... 
+      destruct (eq_id_dec y z)...
       subst. rewrite neq_id...
   Case "trcons".
     apply T_RCons... inversion H7; subst; simpl...
@@ -763,24 +773,24 @@ Proof with eauto.
   (* Proof: By induction on the given typing derivation.  Many cases are
      contradictory ([T_Var], [T_Abs]) or follow directly from the IH
      ([T_RCons]).  We show just the interesting ones. *)
-  has_type_cases (induction HT) Case; 
+  has_type_cases (induction HT) Case;
     intros t' HeqGamma HE; subst; inversion HE; subst...
   Case "T_App".
     (* If the last rule used was [T_App], then [t = t1 t2], and three rules
-       could have been used to show [t ==> t']: [ST_App1], [ST_App2], and 
-       [ST_AppAbs]. In the first two cases, the result follows directly from 
+       could have been used to show [t ==> t']: [ST_App1], [ST_App2], and
+       [ST_AppAbs]. In the first two cases, the result follows directly from
        the IH. *)
     inversion HE; subst...
     SCase "ST_AppAbs".
-      (* For the third case, suppose 
+      (* For the third case, suppose
            [t1 = tabs x T11 t12]
          and
-           [t2 = v2].  We must show that [empty |- [x:=v2]t12 : T2]. 
+           [t2 = v2].  We must show that [empty |- [x:=v2]t12 : T2].
          We know by assumption that
              [empty |- tabs x T11 t12 : T1->T2]
          and by inversion
              [x:T1 |- t12 : T2]
-         We have already proven that substitution_preserves_typing and 
+         We have already proven that substitution_preserves_typing and
              [empty |- v2 : T1]
          by assumption, so we are done. *)
       apply substitution_preserves_typing with T1...
@@ -812,4 +822,3 @@ Qed.
 End STLCExtendedRecords.
 
 (** $Date: 2014-12-31 11:17:56 -0500 (Wed, 31 Dec 2014) $ *)
-
