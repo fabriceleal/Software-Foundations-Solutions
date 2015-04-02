@@ -516,7 +516,7 @@ Proof with eauto.
   Case "T_RCons".
     simpl in Hget. simpl. destruct (eq_id_dec i i0).
     SCase "i is first".
-      simpl. inversion Hget. subst.
+      inversion Hget. subst.
       exists t...
     SCase "get tail".
       destruct IHHtyp2 as [vi [Hgeti Htypi]]...
@@ -657,8 +657,6 @@ Proof with eauto.
   Case "T_Abs".
     apply T_Abs... apply IHhas_type. intros y Hafi.
     unfold extend. destruct (eq_id_dec x y)...
-  Case "T_App".
-    apply T_App with T1...
   Case "T_RCons".
     apply T_RCons...  Qed.
 
@@ -808,7 +806,7 @@ Proof with eauto.
      projection steps to. *)
     destruct (lookup_field_in_value _ _ _ _ H2 HT H)
       as [vi [Hget Htyp]].
-    rewrite H4 in Hget. inversion Hget. subst...
+    rewrite H4 in Hget. inversion Hget...
   Case "T_RCons".
   (* If the last rule was [T_RCons], then [t = trcons i t tr] for
      some [i], [t] and [tr] such that [record_tm tr].  If the step is
