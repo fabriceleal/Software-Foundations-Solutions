@@ -72,7 +72,7 @@ Require Export Smallstep.
 Module STLCRef.
 
 (** The basic operations on references are _allocation_,
-    _dereferencing_, and _assignment_.  
+    _dereferencing_, and _assignment_.
 
        - To allocate a reference, we use the [ref] operator, providing
          an initial value for the new cell.  For example, [ref 5]
@@ -98,7 +98,7 @@ Module STLCRef.
     need the _unit type_, which we will use as the result type of an
     assignment operation.  We then add _reference types_. *)
 (** If [T] is a type, then [Ref T] is the type of references which
-    point to a cell holding values of type [T].  
+    point to a cell holding values of type [T].
       T ::= Nat
           | Unit
           | T -> T
@@ -156,7 +156,7 @@ Inductive tm  : Type :=
 
     - [l] (formally, [tloc l]) is a reference to the cell at
       location [l].  We'll discuss locations later. *)
-    
+
 (** In informal examples, we'll also freely use the extensions
     of the STLC developed in the [MoreStlc] chapter; however, to keep
     the proofs small, we won't bother formalizing them again here.  It
@@ -165,12 +165,12 @@ Inductive tm  : Type :=
 
 Tactic Notation "t_cases" tactic(first) ident(c) :=
   first;
-  [ Case_aux c "tvar" | Case_aux c "tapp" 
-  | Case_aux c "tabs" | Case_aux c "tzero" 
+  [ Case_aux c "tvar" | Case_aux c "tapp"
+  | Case_aux c "tabs" | Case_aux c "tzero"
   | Case_aux c "tsucc" | Case_aux c "tpred"
   | Case_aux c "tmult" | Case_aux c "tif0"
-  | Case_aux c "tunit" | Case_aux c "tref" 
-  | Case_aux c "tderef" | Case_aux c "tassign" 
+  | Case_aux c "tunit" | Case_aux c "tref"
+  | Case_aux c "tderef" | Case_aux c "tassign"
   | Case_aux c "tloc" ].
 
 Module ExampleVariables.
@@ -214,7 +214,7 @@ Inductive value : tm -> Prop :=
       value (tabs x T t)
   | v_nat : forall n,
       value (tnat n)
-  | v_unit : 
+  | v_unit :
       value tunit
   | v_loc : forall l,
       value (tloc l).
@@ -226,31 +226,31 @@ Hint Constructors value.
 
 Fixpoint subst (x:id) (s:tm) (t:tm) : tm :=
   match t with
-  | tvar x'       => 
+  | tvar x'       =>
       if eq_id_dec x x' then s else t
-  | tapp t1 t2    => 
+  | tapp t1 t2    =>
       tapp (subst x s t1) (subst x s t2)
-  | tabs x' T t1  => 
+  | tabs x' T t1  =>
       if eq_id_dec x x' then t else tabs x' T (subst x s t1)
-  | tnat n        => 
+  | tnat n        =>
       t
-  | tsucc t1      => 
+  | tsucc t1      =>
       tsucc (subst x s t1)
-  | tpred t1      => 
+  | tpred t1      =>
       tpred (subst x s t1)
-  | tmult t1 t2   => 
+  | tmult t1 t2   =>
       tmult (subst x s t1) (subst x s t2)
-  | tif0 t1 t2 t3 => 
+  | tif0 t1 t2 t3 =>
       tif0 (subst x s t1) (subst x s t2) (subst x s t3)
-  | tunit         => 
+  | tunit         =>
       t
-  | tref t1       => 
+  | tref t1       =>
       tref (subst x s t1)
-  | tderef t1     => 
+  | tderef t1     =>
       tderef (subst x s t1)
-  | tassign t1 t2 => 
+  | tassign t1 t2 =>
       tassign (subst x s t1) (subst x s t2)
-  | tloc _        => 
+  | tloc _        =>
       t
   end.
 
@@ -268,7 +268,7 @@ Notation "'[' x ':=' s ']' t" := (subst x s t) (at level 20).
 <<
        r:=succ(!r); !r
 >>
-    as an abbreviation for 
+    as an abbreviation for
 <<
        (\x:Unit. !r) (r := succ(!r)).
 >>
@@ -290,7 +290,7 @@ Notation "'[' x ':=' s ']' t" := (subst x s t) (at level 20).
 (** Formally, we introduce sequencing as a "derived form"
     [tseq] that expands into an abstraction and an application. *)
 
-Definition tseq t1 t2 := 
+Definition tseq t1 t2 :=
   tapp (tabs (Id 0) TUnit t2) t1.
 
 (* ################################### *)
@@ -316,13 +316,13 @@ Definition tseq t1 t2 :=
     and [s] are said to be _aliases_ for the same cell.
 
     The possibility of aliasing can make programs with references
-    quite tricky to reason about.  For example, the expression 
+    quite tricky to reason about.  For example, the expression
 <<
       r := 5; r := !s
 >>
     assigns [5] to [r] and then immediately overwrites it with [s]'s
     current value; this has exactly the same effect as the single
-    assignment 
+    assignment
 <<
       r := !s
 >>
@@ -368,7 +368,7 @@ Definition tseq t1 t2 :=
     [incc], and [decc], packages [incc] and [decc] together into a
     record, and returns this record:
 <<
-    newcounter = 
+    newcounter =
         \_:Unit.
            let c = ref 0 in
            let incc = \_:Unit. (c := succ (!c); !c) in
@@ -395,7 +395,7 @@ Definition tseq t1 t2 :=
     execution where the first two [let]s have finished and the third
     one is about to begin. *)
 
-(* FILL IN HERE *)
+(* 0 0 *)
 (** [] *)
 
 (* ################################### *)
@@ -410,11 +410,11 @@ Definition tseq t1 t2 :=
 
     Recall the [equal] function from the [MoreStlc] chapter:
 <<
-    equal = 
-      fix 
+    equal =
+      fix
         (\eq:Nat->Nat->Bool.
            \m:Nat. \n:Nat.
-             if m=0 then iszero n 
+             if m=0 then iszero n
              else if n=0 then false
              else eq (pred m) (pred n))
 >>
@@ -435,7 +435,7 @@ Definition tseq t1 t2 :=
     value that was given to [update], and on all other indices passes the
     lookup to the function that was previously stored in the reference.
 <<
-    update = \a:NatArray. \m:Nat. \v:Nat. 
+    update = \a:NatArray. \m:Nat. \v:Nat.
                  let oldf = !a in
                  a := (\n:Nat. if equal m n then v else oldf n);
 >>
@@ -446,12 +446,12 @@ Definition tseq t1 t2 :=
 (** **** Exercise: 2 stars (compact_update)  *)
 (** If we defined [update] more compactly like this
 <<
-    update = \a:NatArray. \m:Nat. \v:Nat. 
+    update = \a:NatArray. \m:Nat. \v:Nat.
                 a := (\n:Nat. if equal m n then v else (!a) n)
 >>
 would it behave the same? *)
 
-(* FILL IN HERE *)
+(* no, functions are values, evaluation will delay, causing an infinite loop. *)
 (** [] *)
 
 (* ################################### *)
@@ -470,13 +470,13 @@ would it behave the same? *)
     or may not have a valid pointer in our hands.  Fortunately, there
     is no need to extend the basic mechanisms of references to achieve
     this: the sum types introduced in the [MoreStlc] chapter already
-    give us what we need.  
+    give us what we need.
 
     First, we can use sums to build an analog of the [option] types
     introduced in the [Lists] chapter.  Define [Option T] to be an
-    abbreviation for [Unit + T].  
+    abbreviation for [Unit + T].
 
-    Then a "nullable reference to a [T]" is simply an element of the 
+    Then a "nullable reference to a [T]" is simply an element of the
     type [Option (Ref T)].  *)
 
 (* ################################### *)
@@ -503,7 +503,7 @@ would it behave the same? *)
 (** **** Exercise: 1 star (type_safety_violation)  *)
 (** Show how this can lead to a violation of type safety. *)
 
-(* FILL IN HERE *)
+(* dereferrence *)
 (** [] *)
 
 (* ###################################################################### *)
@@ -610,7 +610,7 @@ Proof.
   induction l as [|a l']; intros; try solve by inversion.
   Case "l = a :: l'".
     destruct n; auto.
-    simpl. apply IHl'. 
+    simpl. apply IHl'.
     simpl in H. apply lt_S_n in H. assumption.
 Qed.
 
@@ -626,7 +626,7 @@ Qed.
 Fixpoint replace {A:Type} (n:nat) (x:A) (l:list A) : list A :=
   match l with
   | nil    => nil
-  | h :: t => 
+  | h :: t =>
     match n with
     | O    => x :: t
     | S n' => h :: replace n' x t
@@ -653,15 +653,15 @@ Proof with auto.
 Qed.
 
 Lemma lookup_replace_eq : forall l t st,
-  l < length st -> 
+  l < length st ->
   store_lookup l (replace l t st) = t.
 Proof with auto.
   intros l t st.
   unfold store_lookup.
   generalize dependent l.
-  induction st as [|t' st']; intros l Hlen. 
-  Case "st = []". 
-   inversion Hlen. 
+  induction st as [|t' st']; intros l Hlen.
+  Case "st = []".
+   inversion Hlen.
   Case "st = t' :: st'".
     destruct l; simpl...
     apply IHst'. simpl in Hlen. omega.
@@ -674,7 +674,7 @@ Proof with auto.
   unfold store_lookup.
   induction l1 as [|l1']; intros l2 t st Hneq.
   Case "l1 = 0".
-    destruct st. 
+    destruct st.
     SCase "st = []". rewrite replace_nil...
     SCase "st = _ :: _". destruct l2... contradict Hneq...
   Case "l1 = S l1'".
@@ -784,7 +784,7 @@ Qed.
                    ref v1 / st ==> loc |st| / st,v1
     The value resulting from this step is the newly allocated location
     itself.  (Formally, [st,v1] means [snoc st v1].)
-    
+
     Note that these evaluation rules do not perform any kind of
     garbage collection: we simply allow the store to keep growing
     without bound as evaluation proceeds.  This does not affect the
@@ -866,21 +866,21 @@ where "t1 '/' st1 '==>' t2 '/' st2" := (step (t1,st1) (t2,st2)).
 
 Tactic Notation "step_cases" tactic(first) ident(c) :=
   first;
-  [ Case_aux c "ST_AppAbs" | Case_aux c "ST_App1" 
-  | Case_aux c "ST_App2" | Case_aux c "ST_SuccNat" 
-  | Case_aux c "ST_Succ" | Case_aux c "ST_PredNat" 
-  | Case_aux c "ST_Pred" | Case_aux c "ST_MultNats" 
+  [ Case_aux c "ST_AppAbs" | Case_aux c "ST_App1"
+  | Case_aux c "ST_App2" | Case_aux c "ST_SuccNat"
+  | Case_aux c "ST_Succ" | Case_aux c "ST_PredNat"
+  | Case_aux c "ST_Pred" | Case_aux c "ST_MultNats"
   | Case_aux c "ST_Mult1" | Case_aux c "ST_Mult2"
-  | Case_aux c "ST_If0" | Case_aux c "ST_If0_Zero" 
-  | Case_aux c "ST_If0_Nonzero" | Case_aux c "ST_RefValue" 
-  | Case_aux c "ST_Ref" | Case_aux c "ST_DerefLoc" 
-  | Case_aux c "ST_Deref" | Case_aux c "ST_Assign" 
+  | Case_aux c "ST_If0" | Case_aux c "ST_If0_Zero"
+  | Case_aux c "ST_If0_Nonzero" | Case_aux c "ST_RefValue"
+  | Case_aux c "ST_Ref" | Case_aux c "ST_DerefLoc"
+  | Case_aux c "ST_Deref" | Case_aux c "ST_Assign"
   | Case_aux c "ST_Assign1" | Case_aux c "ST_Assign2" ].
 
 Hint Constructors step.
 
 Definition multistep := (multi step).
-Notation "t1 '/' st '==>*' t2 '/' st'" := (multistep (t1,st) (t2,st')) 
+Notation "t1 '/' st '==>*' t2 '/' st'" := (multistep (t1,st) (t2,st'))
   (at level 40, st at level 39, t2 at level 39).
 
 (* ################################### *)
@@ -920,9 +920,9 @@ Definition context := partial_map ty.
     location [1] has type [Unit], and with respect to the latter it
     has type [Unit->Unit]. This observation leads us immediately to a
     first attempt at a typing rule for locations:
-                             Gamma |- lookup  l st : T1 
-                            ---------------------------- 
-                             Gamma |- loc l : Ref T1 
+                             Gamma |- lookup  l st : T1
+                            ----------------------------
+                             Gamma |- loc l : Ref T1
     That is, to find the type of a location [l], we look up the
     current contents of [l] in the store and calculate the type [T1]
     of the contents.  The type of the location is then [Ref T1].
@@ -950,7 +950,7 @@ Definition context := partial_map ty.
     [l] appears many times in a term [t], we will re-calculate the type of
     [v] many times in the course of constructing a typing derivation for
     [t].  Worse, if [v] itself contains locations, then we will have to
-    recalculate _their_ types each time they appear.  
+    recalculate _their_ types each time they appear.
 
     Second, the proposed typing rule for locations may not allow us to
     derive anything at all, if the store contains a _cycle_.  For example,
@@ -963,7 +963,9 @@ Definition context := partial_map ty.
 (** **** Exercise: 2 stars (cyclic_store)  *)
 (** Can you find a term whose evaluation will create this particular
     cyclic store? *)
-
+(* let a = ref 0 in *)
+(* let b = ref (\y:Nat. (a!) y) in *)
+(* a := ref (\y:Nat. (b!) y) *)
 (** [] *)
 
 (** Both of these problems arise from the fact that our proposed
@@ -979,7 +981,7 @@ Definition context := partial_map ty.
     single, definite type for every location in the store, which is
     fixed when the location is allocated.  Then these intended types
     can be collected together as a _store typing_ ---a finite function
-    mapping locations to types.   
+    mapping locations to types.
 
     As usual, this _conservative_ typing restriction on allowed
     updates means that we will rule out as ill-typed some programs
@@ -1052,8 +1054,8 @@ Inductive has_type : context -> store_ty -> tm -> ty -> Prop :=
       (extend Gamma x T11); ST |- t12 \in T12 ->
       Gamma; ST |- (tabs x T11 t12) \in (TArrow T11 T12)
   | T_App : forall T1 T2 Gamma ST t1 t2,
-      Gamma; ST |- t1 \in (TArrow T1 T2) -> 
-      Gamma; ST |- t2 \in T1 -> 
+      Gamma; ST |- t1 \in (TArrow T1 T2) ->
+      Gamma; ST |- t2 \in T1 ->
       Gamma; ST |- (tapp t1 t2) \in T2
   | T_Nat : forall Gamma ST n,
       Gamma; ST |- (tnat n) \in TNat
@@ -1098,7 +1100,7 @@ Tactic Notation "has_type_cases" tactic(first) ident(c) :=
   | Case_aux c "T_Nat" | Case_aux c "T_Succ" | Case_aux c "T_Pred"
   | Case_aux c "T_Mult" | Case_aux c "T_If0"
   | Case_aux c "T_Unit" | Case_aux c "T_Loc"
-  | Case_aux c "T_Ref" | Case_aux c "T_Deref" 
+  | Case_aux c "T_Ref" | Case_aux c "T_Deref"
   | Case_aux c "T_Assign" ].
 
 (** Of course, these typing rules will accurately predict the results
@@ -1164,7 +1166,7 @@ Abort.
 
 Definition store_well_typed (ST:store_ty) (st:store) :=
   length ST = length st /\
-  (forall l, l < length st -> 
+  (forall l, l < length st ->
      empty; ST |- (store_lookup l st) \in (store_Tlookup l ST)).
 
 (** Informally, we will write [ST |- st] for [store_well_typed ST st]. *)
@@ -1180,14 +1182,14 @@ Definition store_well_typed (ST:store_ty) (st:store) :=
 (** Can you find a store [st], and two
     different store typings [ST1] and [ST2] such that both
     [ST1 |- st] and [ST2 |- st]? *)
-
-(* FILL IN HERE *)
+(* [\x:Nat. (!(loc 1)) x, \x:Nat. (!(loc 0)) x] *)
+(* [Nat -> X, Nat -> X] *)
 (** [] *)
 
 (** We can now state something closer to the desired preservation
     property: *)
 
-Theorem preservation_wrong2 : forall ST T t st t' st', 
+Theorem preservation_wrong2 : forall ST T t st t' st',
   empty; ST |- t \in T ->
   t / st ==> t' / st' ->
   store_well_typed ST st ->
@@ -1212,10 +1214,10 @@ Abort.
     the end. *)
 
 Inductive extends : store_ty -> store_ty -> Prop :=
-  | extends_nil  : forall ST', 
+  | extends_nil  : forall ST',
       extends ST' nil
-  | extends_cons : forall x ST' ST, 
-      extends ST' ST -> 
+  | extends_cons : forall x ST' ST,
+      extends ST' ST ->
       extends (x::ST') (x::ST).
 
 Hint Constructors extends.
@@ -1227,10 +1229,10 @@ Hint Constructors extends.
 
 Lemma extends_lookup : forall l ST ST',
   l < length ST ->
-  extends ST' ST -> 
+  extends ST' ST ->
   store_Tlookup l ST' = store_Tlookup l ST.
 Proof with auto.
-  intros l ST ST' Hlen H. 
+  intros l ST ST' Hlen H.
   generalize dependent ST'. generalize dependent l.
   induction ST as [|a ST2]; intros l Hlen ST' HST'.
   Case "nil". inversion Hlen.
@@ -1286,7 +1288,7 @@ Definition preservation_theorem := forall ST t t' T st st',
   store_well_typed ST st ->
   t / st ==> t' / st' ->
   exists ST',
-    (extends ST' ST /\ 
+    (extends ST' ST /\
      empty; ST' |- t' \in T /\
      store_well_typed ST' st').
 
@@ -1359,7 +1361,7 @@ Inductive appears_free_in : id -> tm -> Prop :=
 Tactic Notation "afi_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "afi_var"
-  | Case_aux c "afi_app1" | Case_aux c "afi_app2" | Case_aux c "afi_abs" 
+  | Case_aux c "afi_app1" | Case_aux c "afi_app2" | Case_aux c "afi_abs"
   | Case_aux c "afi_succ" | Case_aux c "afi_pred"
   | Case_aux c "afi_mult1" | Case_aux c "afi_mult2"
   | Case_aux c "afi_if0_1" | Case_aux c "afi_if0_2" | Case_aux c "afi_if0_3"
@@ -1374,11 +1376,11 @@ Lemma free_in_context : forall x t T Gamma ST,
    exists T', Gamma x = Some T'.
 Proof with eauto.
   intros. generalize dependent Gamma. generalize dependent T.
-  afi_cases (induction H) Case; 
+  afi_cases (induction H) Case;
         intros; (try solve [ inversion H0; subst; eauto ]).
   Case "afi_abs".
     inversion H1; subst.
-    apply IHappears_free_in in H8. 
+    apply IHappears_free_in in H8.
     rewrite extend_neq in H8; assumption.
 Qed.
 
@@ -1397,7 +1399,7 @@ Proof with eauto.
     unfold extend.
     destruct (eq_id_dec x x0)...
   Case "T_App".
-    eapply T_App. 
+    eapply T_App.
       apply IHhas_type1...
       apply IHhas_type2...
   Case "T_Mult".
@@ -1424,13 +1426,13 @@ Proof with eauto.
   generalize dependent Gamma. generalize dependent T.
   t_cases (induction t) Case; intros T Gamma H;
     inversion H; subst; simpl...
-  Case "tvar". 
+  Case "tvar".
     rename i into y.
     destruct (eq_id_dec x y).
     SCase "x = y".
-      subst. 
+      subst.
       rewrite extend_eq in H3.
-      inversion H3; subst. 
+      inversion H3; subst.
       eapply context_invariance...
       intros x Hcontra.
       destruct (free_in_context _ _ _ _ _ Hcontra Hs) as [T' HT'].
@@ -1438,20 +1440,20 @@ Proof with eauto.
     SCase "x <> y".
       apply T_Var.
       rewrite extend_neq in H3...
-  Case "tabs". subst. 
+  Case "tabs". subst.
     rename i into y.
     destruct (eq_id_dec x y).
     SCase "x = y".
-      subst. 
+      subst.
       apply T_Abs. eapply context_invariance...
-      intros. apply extend_shadow. 
+      intros. apply extend_shadow.
     SCase "x <> x0".
       apply T_Abs. apply IHt.
       eapply context_invariance...
       intros. unfold extend.
       destruct (eq_id_dec y x0)...
-      subst. 
-      rewrite neq_id... 
+      subst.
+      rewrite neq_id...
 Qed.
 
 (* ################################### *)
@@ -1472,12 +1474,12 @@ Proof with auto.
   inversion HST; subst.
   split. rewrite length_replace...
   intros l' Hl'.
-  destruct (beq_nat l' l) eqn: Heqll'. 
+  destruct (beq_nat l' l) eqn: Heqll'.
   Case "l' = l".
     apply beq_nat_true in Heqll'; subst.
     rewrite lookup_replace_eq...
   Case "l' <> l".
-    apply beq_nat_false in Heqll'. 
+    apply beq_nat_false in Heqll'.
     rewrite lookup_replace_neq...
     rewrite length_replace in Hl'.
     apply H0...
@@ -1535,7 +1537,7 @@ Proof with auto.
       rewrite Hlen...
     SCase "l = length st".
       inversion Heq.
-      rewrite nth_eq_snoc. 
+      rewrite nth_eq_snoc.
       rewrite <- Hlen. rewrite nth_eq_snoc...
       apply store_weakening with ST... apply extends_snoc.
 Qed.
@@ -1551,14 +1553,14 @@ Theorem preservation : forall ST t t' T st st',
   store_well_typed ST st ->
   t / st ==> t' / st' ->
   exists ST',
-    (extends ST' ST /\ 
+    (extends ST' ST /\
      empty; ST' |- t' \in T /\
      store_well_typed ST' st').
 Proof with eauto using store_weakening, extends_refl.
     remember (@empty ty) as Gamma.
   intros ST t t' T st st' Ht.
   generalize dependent t'.
-  has_type_cases (induction Ht) Case; intros t' HST Hstep; 
+  has_type_cases (induction Ht) Case; intros t' HST Hstep;
     subst; try (solve by inversion); inversion Hstep; subst;
     try (eauto using store_weakening, extends_refl).
   Case "T_App".
@@ -1574,10 +1576,10 @@ Proof with eauto using store_weakening, extends_refl.
       inversion H5 as [ST' [Hext [Hty Hsty]]].
       exists ST'...
   Case "T_Succ".
-    SCase "ST_Succ". 
+    SCase "ST_Succ".
       eapply IHHt in H0...
       inversion H0 as [ST' [Hext [Hty Hsty]]].
-      exists ST'... 
+      exists ST'...
   Case "T_Pred".
     SCase "ST_Pred".
       eapply IHHt in H0...
@@ -1598,22 +1600,22 @@ Proof with eauto using store_weakening, extends_refl.
       inversion H0 as [ST' [Hext [Hty Hsty]]].
       exists ST'... split...
   Case "T_Ref".
-    SCase "ST_RefValue". 
-      exists (snoc ST T1). 
+    SCase "ST_RefValue".
+      exists (snoc ST T1).
       inversion HST; subst.
       split.
         apply extends_snoc.
       split.
-        replace (TRef T1) 
+        replace (TRef T1)
           with (TRef (store_Tlookup (length st) (snoc ST T1))).
-        apply T_Loc. 
+        apply T_Loc.
         rewrite <- H. rewrite length_snoc. omega.
         unfold store_Tlookup. rewrite <- H. rewrite nth_eq_snoc...
         apply store_well_typed_snoc; assumption.
     SCase "ST_Ref".
       eapply IHHt in H0...
       inversion H0 as [ST' [Hext [Hty Hsty]]].
-      exists ST'... 
+      exists ST'...
   Case "T_Deref".
     SCase "ST_DerefLoc".
       exists ST. split; try split...
@@ -1643,9 +1645,9 @@ Qed.
 (** **** Exercise: 3 stars (preservation_informal)  *)
 (** Write a careful informal proof of the preservation theorem,
     concentrating on the [T_App], [T_Deref], [T_Assign], and [T_Ref]
-    cases. 
+    cases.
 
-(* FILL IN HERE *)
+...
 [] *)
 
 
@@ -1655,7 +1657,7 @@ Qed.
 (** Fortunately, progress for this system is pretty easy to prove; the
     proof is very similar to the proof of progress for the STLC, with
     a few new cases for the new syntactic constructs. *)
-      
+
 Theorem progress : forall ST t T st,
   empty; ST |- t \in T ->
   store_well_typed ST st ->
@@ -1679,7 +1681,7 @@ Proof with eauto.
     SCase "t1 is a value".
       inversion Ht1p; subst; try solve [ inversion Ht ].
       SSCase "t1 is a tnat".
-        exists (tnat (S n)). exists st... 
+        exists (tnat (S n)). exists st...
     SCase "t1 steps".
       inversion Ht1p as [t1' [st' Hstep]].
       exists (tsucc t1'). exists st'...
@@ -1767,8 +1769,8 @@ Import ExampleVariables.
     another function stored in a reference cell; the trick is that we
     then smuggle in a reference to itself!
 <<
-   (\r:Ref (Unit -> Unit). 
-        r := (\x:Unit.(!r) unit); (!r) unit) 
+   (\r:Ref (Unit -> Unit).
+        r := (\x:Unit.(!r) unit); (!r) unit)
    (ref (\x:Unit.unit))
 >>
 
@@ -1779,7 +1781,7 @@ Import ExampleVariables.
    ignores its argument and calls the function stored in [r] on the
    argument [unit]; but of course, that function is itself!  To get
    the ball rolling we finally execute this function with [(!r)
-   unit]. 
+   unit].
 *)
 
 Definition loop_fun :=
@@ -1800,12 +1802,12 @@ Proof with eauto.
   eapply T_App...
   eapply T_Abs...
   eapply T_App...
-    eapply T_Abs. eapply T_App. eapply T_Deref. eapply T_Var. 
+    eapply T_Abs. eapply T_App. eapply T_Deref. eapply T_Var.
     unfold extend. simpl. reflexivity. auto.
   eapply T_Assign.
     eapply T_Var. unfold extend. simpl. reflexivity.
-  eapply T_Abs. 
-    eapply T_App... 
+  eapply T_Abs.
+    eapply T_App...
       eapply T_Deref. eapply T_Var. reflexivity.
 Qed.
 
@@ -1825,7 +1827,7 @@ Inductive step_closure {X:Type} (R: relation X) : X -> X -> Prop :=
                 step_closure R x z.
 
 Definition multistep1 := (step_closure step).
-Notation "t1 '/' st '==>+' t2 '/' st'" := (multistep1 (t1,st) (t2,st')) 
+Notation "t1 '/' st '==>+' t2 '/' st'" := (multistep1 (t1,st) (t2,st'))
   (at level 40, st at level 39, t2 at level 39).
 
 (** Now, we can show that the expression [loop] reduces to the
@@ -1840,13 +1842,13 @@ Notation "t1 '/' st '==>+' t2 '/' st'" := (multistep1 (t1,st) (t2,st'))
     into an infinite loop reducing it forever! *)
 
 Ltac print_goal := match goal with |- ?x => idtac x end.
-Ltac reduce := 
-    repeat (print_goal; eapply multi_step ; 
+Ltac reduce :=
+    repeat (print_goal; eapply multi_step ;
             [ (eauto 10; fail) | (instantiate; compute)];
             try solve [apply multi_refl]).
 
-Lemma loop_steps_to_loop_fun : 
-  loop / nil ==>* 
+Lemma loop_steps_to_loop_fun :
+  loop / nil ==>*
   tapp (tderef (tloc 0)) tunit / cons ([r:=tloc 0]loop_fun) nil.
 Proof with eauto.
   unfold loop.
@@ -1855,8 +1857,8 @@ Qed.
 
 (** Finally, the latter expression reduces in two steps to itself! *)
 
-Lemma loop_fun_step_self : 
-  tapp (tderef (tloc 0)) tunit / cons ([r:=tloc 0]loop_fun) nil ==>+ 
+Lemma loop_fun_step_self :
+  tapp (tderef (tloc 0)) tunit / cons ([r:=tloc 0]loop_fun) nil ==>+
   tapp (tderef (tloc 0)) tunit / cons ([r:=tloc 0]loop_fun) nil.
 Proof with eauto.
   unfold loop_fun; simpl.
@@ -1870,25 +1872,48 @@ Qed.
     behaves like the factorial.  Just use the example below to make
     sure it gives the correct result when applied to the argument
     [4].) *)
+Definition fac :=
+  tabs x TNat (tif0 (tvar x) (tnat 1)
+                    (tmult (tvar x)
+                           (tapp (tderef (tvar r))
+                                 (tpred (tvar x))))).
 
 Definition factorial : tm :=
-  (* FILL IN HERE *) admit.
+  tabs y TNat (tapp (tabs r (TRef (TArrow TNat TNat))
+                          (tseq (tassign (tvar r) fac)
+                                (tapp (tderef (tvar r)) (tvar y))))
+                    (tref (tabs x TNat (tnat 1)))).
+
+Hint Extern 2 (has_type _ _ (tapp _ _) _) =>
+  eapply T_App; auto.
+Hint Extern 2 (has_type _ _ (tseq _ _) _) =>
+  eapply T_App; eauto.
+Hint Extern 2 (has_type _ _ (tabs _ _ _) _) =>
+  eapply T_Abs; auto.
+Hint Extern 2 (has_type _ _ (tvar _ _ _) _) =>
+  eapply T_Var; auto.
+Hint Extern 2 (has_type _ _ (tderef _ _ _) _) =>
+  eapply T_Deref; auto.
+Hint Extern 2 (has_type _ _ (tassign _ _ _) _) =>
+  eapply T_Assign; auto.
+Hint Extern 2 (extend _ _ _ _ = _) =>
+  unfold extend; try reflexivity; auto.
 
 Lemma factorial_type : empty; nil |- factorial \in (TArrow TNat TNat).
 Proof with eauto.
-  (* FILL IN HERE *) Admitted.
+  unfold factorial. unfold fac...
+Qed.
 
 (** If your definition is correct, you should be able to just
     uncomment the example below; the proof should be fully
     automatic using the [reduce] tactic. *)
 
-(* 
-Lemma factorial_4 : exists st, 
+
+Lemma factorial_4 : exists st,
   tapp factorial (tnat 4) / nil ==>* tnat 24 / st.
 Proof.
   eexists. unfold factorial. reduce.
 Qed.
-*)
 (** [] *)
 
 (* ################################### *)
