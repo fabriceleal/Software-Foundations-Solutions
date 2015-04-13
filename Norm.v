@@ -596,7 +596,6 @@ Fixpoint R (T:ty) (t:tm) {struct T} : Prop :=
    | TBool  => True
    | TArrow T1 T2 => (forall s, R T1 s -> R T2 (tapp t s))
    | TProd T1 T2 => (exists s1 s2, t ==>* tpair s1 s2 /\
-                             value s1 /\ value s2 /\
                              R T1 s1 /\ R T2 s2)
    end).
 
@@ -673,15 +672,16 @@ Proof.
   eapply IHT2.
   apply  ST_App1. apply E.
   apply RRt; auto.
-  split. eapply preservation; eauto.
+  destruct RRt as [s1 [s2 [H0 [H1 H2]]]].
+  inversion H0; subst. inversion E; subst;
+  split; try eapply preservation; eauto;
+  split; try apply (step_preserves_halting _ _ E); eauto.
+  exists t1'; eauto.
+  exists s1; eauto.
+  assert (t' = y) by (eapply step_deterministic; eauto).
+  subst. split. eapply preservation; eauto.
   split. apply (step_preserves_halting _ _ E); eauto.
-  destruct RRt as [s1 [s2 [H1 [H2 [H3 [H4 H5]]]]]].
-  exists s1. exists s2. repeat split; auto.
-  inversion H1; subst. inversion E; subst. apply value__normal in H2.
-  contradiction H2; eauto.
-  apply value__normal in H3. contradiction H3; eauto.
-  assert (y = t'). eapply step_deterministic; eauto.
-  subst; auto.
+  exists s1; eauto.
 Qed.
 
 
@@ -1155,15 +1155,6 @@ Proof with eauto.
   intros. induction H...
 Qed.
 
-Lemma preservation_multistep : forall t t' T,
-  has_type empty t T ->
-  t ==>* t' ->
-  has_type empty t' T.
-Proof with eauto.
-  intros. induction H0...
-    apply IHmulti. eapply preservation...
-Qed.
-
 (* ###################################################################### *)
 (** *** The R Lemma. *)
 
@@ -1254,63 +1245,68 @@ Proof.
         apply multistep_Pair2. auto. apply H21.
     split. exists (tpair v1 v2). auto.
     exists v1. exists v2. split. auto.
-    split; auto. split; auto. split.
+    split.
       eapply multistep_preserves_R. apply H11. auto.
       eapply multistep_preserves_R. apply H21. auto.
   Case "T_Fst".
-     rewrite msubst_fst. pose proof (IHHT c H env0 V).
-    unfold R in H0. fold R in H0.
-    destruct H0 as [HT' [_ [v1 [v2 [STM [value_v1 [value_v2 [R_v1 _]]]]]]]].
-    eapply multistep_preserves_R'.
-      eapply T_Fst. apply HT'.
-      apply multistep_Fst. apply STM.
-      eapply step_preserves_R'.
-        eapply T_Fst. eapply preservation_multistep. apply HT'. auto.
-        apply ST_FstPair; auto.
-      auto.
-   Case "T_Snd".
+    rewrite msubst_fst. pose proof (IHHT c H env0 V).
+    destruct H0 as [HT' [halts [s1 [s2 [STM [R_s1 R_s2]]]]]].
+    destruct (R_halts R_s1) as [v1 [H11 H12]].
+    destruct (R_halts R_s2) as [v2 [H21 H22]].
+    assert (tfst (msubst env0 t) ==>* v1).
+    apply multi_trans with (tfst (tpair v1 v2)); eauto.
+    apply multistep_Fst.
+    apply multi_trans with (tpair s1 s2); auto.
+    apply multi_trans with (tpair v1 s2).
+    apply multistep_Pair1; auto.
+    apply multistep_Pair2; auto.
+    assert (R T1 v1). apply multistep_preserves_R with s1; eauto.
+    apply multistep_preserves_R' with v1; eauto.
+  Case "T_Snd".
     rewrite msubst_snd. pose proof (IHHT c H env0 V).
-    unfold R in H0. fold R in H0.
-    destruct H0 as [HT' [_ [v1 [v2 [STM [value_v1 [value_v2 [_ R_v2]]]]]]]].
-    eapply multistep_preserves_R'.
-      eapply T_Snd. apply HT'.
-      apply multistep_Snd. apply STM.
-      eapply step_preserves_R'.
-        eapply T_Snd. eapply preservation_multistep. apply HT'. auto.
-        apply ST_SndPair; auto.
-      auto.
-
+    destruct H0 as [HT' [halts [s1 [s2 [STM [R_s1 R_s2]]]]]].
+    destruct (R_halts R_s1) as [v1 [H11 H12]].
+    destruct (R_halts R_s2) as [v2 [H21 H22]].
+    assert (tsnd (msubst env0 t) ==>* v2).
+    apply multi_trans with (tsnd (tpair v1 v2)); eauto.
+    apply multistep_Snd.
+    apply multi_trans with (tpair s1 s2); auto.
+    apply multi_trans with (tpair v1 s2).
+    apply multistep_Pair1; auto.
+    apply multistep_Pair2; auto.
+    assert (R T2 v2). apply multistep_preserves_R with s2; eauto.
+    apply multistep_preserves_R' with v2; eauto.
   Case "T_True".
     rewrite msubst_true. unfold R. split; auto.
     split. apply value_halts. auto.
     auto.
-
   Case "T_False".
     rewrite msubst_false. unfold R. split; auto.
     split. apply value_halts. auto.
     auto.
-
   Case "T_If".
     rewrite msubst_if.
     destruct (IHHT1 c H env0 V) as [HT [Halts _]].
+    pose proof (IHHT1 c H env0 V).
     pose proof (IHHT2 c H env0 V).
     pose proof (IHHT3 c H env0 V).
-    unfold halts in Halts. destruct Halts as [truth_v [STM value_truth_v]].
-    pose proof (preservation_multistep _ _ _ HT STM).
+    destruct Halts as [bool [STM value]].
     assert (has_type empty (tif (msubst env0 t0) (msubst env0 t1) (msubst env0 t2)) T).
-      apply T_If. auto. apply (R_typable_empty H0). apply (R_typable_empty H1).
-    eapply multistep_preserves_R'.
-      auto.
-      apply multistep_If. apply STM.
-    destruct value_truth_v; try solve by inversion.
+    apply T_If. auto. apply (R_typable_empty H1). apply (R_typable_empty H2).
+    eapply multistep_preserves_R'. auto.
+    apply multistep_If. apply STM.
+    assert (has_type \empty bool TBool).
+    apply R_typable_empty.
+    apply multistep_preserves_R with (msubst env0 t0); eauto.
+    destruct bool; try solve by inversion.
     eapply step_preserves_R'.
-      apply T_If. auto. apply (R_typable_empty H0). apply (R_typable_empty H1).
-      apply ST_IfTrue.
-      auto.
+    apply T_If. auto. apply (R_typable_empty H1). apply (R_typable_empty H2).
+    apply ST_IfTrue.
+    auto.
     eapply step_preserves_R'.
-      apply T_If. auto. apply (R_typable_empty H0). apply (R_typable_empty H1).
-      apply ST_IfFalse.
-      auto.
+    apply T_If. auto. apply (R_typable_empty H1). apply (R_typable_empty H2).
+    apply ST_IfFalse.
+    auto.
 Qed.
 (* ###################################################################### *)
 (** *** Normalization Theorem *)
