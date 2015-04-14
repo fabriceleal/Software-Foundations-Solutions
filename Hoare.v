@@ -104,7 +104,12 @@ Definition as4 : Assertion :=
 Definition as5 : Assertion := fun st => True.
 Definition as6 : Assertion := fun st => False.
 
-(* ... *)
+(* x = 3 *)
+(* x <= y *)
+(* x = 3 and x <= y *)
+(* z ^ 2 <= x and (z + 1) ^ 2 > x *)
+(* always true (no restrictions) *)
+(* never true *)
 
 End ExAssertions.
 (** [] *)
@@ -188,23 +193,22 @@ Notation "{{ P }}  c  {{ Q }}" :=
 (** **** Exercise: 1 star, optional (triples)  *)
 (** Paraphrase the following Hoare triples in English.
    1) {{True}} c {{X = 5}}
-
+from any state, after executing c, to a state where x = 5
    2) {{X = m}} c {{X = m + 5)}}
-
+from where x = m, ..., to where x = m + 5
    3) {{X <= Y}} c {{Y <= X}}
-
+from where x < y, ..., to where y < x
    4) {{True}} c {{False}}
-
+from any state, ..., to no state
    5) {{X = m}}
       c
       {{Y = real_fact m}}.
-
+from where x = m, ..., to where y = m!
    6) {{True}}
       c
       {{(Z * Z) <= m /\ ~ (((S Z) * (S Z)) <= m)}}
-
+from any state, ..., to where m is between z^2 and (z+1)^2
  *)
-
 
 (** [] *)
 
@@ -242,7 +246,7 @@ Notation "{{ P }}  c  {{ Q }}" :=
       {{X = 100}}
 
 *)
-(* 1, 2, 3, 6, 8 *)
+(* 1, 2, 3, 6, 7, 8, 9 *)
 (** [] *)
 
 (** (Note that we're using informal mathematical notations for

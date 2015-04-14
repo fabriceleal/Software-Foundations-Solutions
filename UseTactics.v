@@ -3,21 +3,21 @@
 (* Chapter maintained by Arthur Chargueraud *)
 
 (** Coq comes with a set of builtin tactics, such as [reflexivity],
-    [intros], [inversion] and so on. While it is possible to conduct 
-    proofs using only those tactics, you can significantly increase 
-    your productivity by working with a set of more powerful tactics. 
-    This chapter describes a number of such very useful tactics, which, 
+    [intros], [inversion] and so on. While it is possible to conduct
+    proofs using only those tactics, you can significantly increase
+    your productivity by working with a set of more powerful tactics.
+    This chapter describes a number of such very useful tactics, which,
     for various reasons, are not yet available by default in Coq.
     These tactics are defined in the [LibTactics.v] file. *)
 
-Require Import LibTactics. 
+Require Import LibTactics.
 
 (** Remark: SSReflect is another package providing powerful tactics.
     The library "LibTactics" differs from "SSReflect" in two respects:
         - "SSReflect" was primarily developed for proving mathematical
           theorems, whereas "LibTactics" was primarily developed for proving
-          theorems on programming languages. In particular, "LibTactics" 
-          provides a number of useful tactics that have no counterpart in the 
+          theorems on programming languages. In particular, "LibTactics"
+          provides a number of useful tactics that have no counterpart in the
           "SSReflect" package.
         - "SSReflect" entirely rethinks the presentation of tactics,
           whereas "LibTactics" mostly stick to the traditional
@@ -28,13 +28,13 @@ Require Import LibTactics.
 (** This chapter is a tutorial focusing on the most useful features
     from the "LibTactics" library. It does not aim at presenting all
     the features of "LibTactics". The detailed specification of tactics
-    can be found in the source file [LibTactics.v]. Further documentation 
+    can be found in the source file [LibTactics.v]. Further documentation
     as well as demos can be found at http://www.chargueraud.org/softs/tlc/ . *)
 
 (** In this tutorial, tactics are presented using examples taken from
-    the core chapters of the "Software Foundations" course. To illustrate 
-    the various ways in which a given tactic can be used, we use a 
-    tactic that duplicates a given goal. More precisely, [dup] produces 
+    the core chapters of the "Software Foundations" course. To illustrate
+    the various ways in which a given tactic can be used, we use a
+    tactic that duplicates a given goal. More precisely, [dup] produces
     two copies of the current goal, and [dup n] produces [n] copies of it. *)
 
 
@@ -53,15 +53,15 @@ Require Import LibTactics.
 
 Module IntrovExamples.
   Require Import Stlc.
-  Import Imp STLC. 
+  Import Imp STLC.
 
-(** The tactic [introv] allows to automatically introduce the 
-    variables of a theorem and explicitly name the hypotheses 
-    involved. In the example shown next, the variables [c], 
+(** The tactic [introv] allows to automatically introduce the
+    variables of a theorem and explicitly name the hypotheses
+    involved. In the example shown next, the variables [c],
     [st], [st1] and [st2] involved in the statement of determinism
     need not be named explicitly, because their name where already
     given in the statement of the lemma. On the contrary, it is
-    useful to provide names for the two hypotheses, which we 
+    useful to provide names for the two hypotheses, which we
     name [E1] and [E2], respectively. *)
 
 Theorem ceval_deterministic: forall c st st1 st2,
@@ -72,7 +72,7 @@ Proof.
   introv E1 E2. (* was [intros c st st1 st2 E1 E2] *)
 Abort.
 
-(** When there is no hypothesis to be named, one can call 
+(** When there is no hypothesis to be named, one can call
     [introv] without any argument. *)
 
 Theorem dist_exists_or : forall (X:Type) (P Q : X -> Prop),
@@ -83,14 +83,14 @@ Abort.
 
 (** The tactic [introv] also applies to statements in which
     [forall] and [->] are interleaved. *)
- 
+
 Theorem ceval_deterministic': forall c st st1,
   (c / st || st1) -> forall st2, (c / st || st2) -> st1 = st2.
 Proof.
   introv E1 E2. (* was [intros c st st1 E1 st2 E2] *)
 Abort.
 
-(** Like the arguments of [intros], the arguments of [introv] 
+(** Like the arguments of [intros], the arguments of [introv]
     can be structured patterns. *)
 
 Theorem exists_impl: forall X (P : X -> Prop) (Q : Prop) (R : Prop),
@@ -98,11 +98,11 @@ Theorem exists_impl: forall X (P : X -> Prop) (Q : Prop) (R : Prop),
       ((exists x, P x) -> Q).
 Proof.
   introv [x H2]. eauto.
-  (* same as [intros X P Q R H1 [x H2].], which is itself short 
+  (* same as [intros X P Q R H1 [x H2].], which is itself short
      for [intros X P Q R H1 H2. destruct H2 as [x H2].] *)
 Qed.
 
-(** Remark: the tactic [introv] works even when definitions 
+(** Remark: the tactic [introv] works even when definitions
     need to be unfolded in order to reveal hypotheses. *)
 
 End IntrovExamples.
@@ -116,24 +116,24 @@ Module InvertsExamples.
   Import STLC.
 
 (** The [inversion] tactic of Coq is not very satisfying for
-    three reasons. First, it produces a bunch of equalities 
+    three reasons. First, it produces a bunch of equalities
     which one typically wants to substitute away, using [subst].
     Second, it introduces meaningless names for hypotheses.
     Third, a call to [inversion H] does not remove [H] from the
-    context, even though in most cases an hypothesis is no longer 
-    needed after being inverted. The tactic [inverts] address all 
+    context, even though in most cases an hypothesis is no longer
+    needed after being inverted. The tactic [inverts] address all
     of these three issues. It is intented to be used in place of
     the tactic [inversion]. *)
 
-(** The following example illustrates how the tactic [inverts H] 
-    behaves mostly like [inversion H] except that it performs 
+(** The following example illustrates how the tactic [inverts H]
+    behaves mostly like [inversion H] except that it performs
     some substitutions in order to eliminate the trivial equalities
     that are being produced by [inversion]. *)
 
 Theorem skip_left: forall c,
   cequiv (SKIP;; c) c.
-Proof. 
-  introv. split; intros H. 
+Proof.
+  introv. split; intros H.
   dup. (* duplicate the goal for comparison *)
   (* was: *)
   inversion H. subst. inversion H2. subst. assumption.
@@ -147,7 +147,7 @@ Theorem ceval_deterministic: forall c st st1 st2,
   c / st || st1  ->
   c / st || st2 ->
   st1 = st2.
-Proof. 
+Proof.
   introv E1 E2. generalize dependent st2.
   (ceval_cases (induction E1) Case); intros st2 E2.
   admit. admit. (* skip some basic cases *)
@@ -156,29 +156,29 @@ Proof.
   (* now: *) inverts E2. admit.
 Abort.
 
-(** The tactic [inverts H as.] is like [inverts H] except that the 
+(** The tactic [inverts H as.] is like [inverts H] except that the
     variables and hypotheses being produced are placed in the goal
     rather than in the context. This strategy allows naming those
-    new variables and hypotheses explicitly, using either [intros] 
+    new variables and hypotheses explicitly, using either [intros]
     or [introv]. *)
 
 Theorem ceval_deterministic': forall c st st1 st2,
   c / st || st1  ->
   c / st || st2 ->
   st1 = st2.
-Proof. 
+Proof.
   introv E1 E2. generalize dependent st2.
-  (ceval_cases (induction E1) Case); intros st2 E2; 
+  (ceval_cases (induction E1) Case); intros st2 E2;
     inverts E2 as.
   Case "E_Skip". reflexivity.
-  Case "E_Ass". 
-    (* Observe that the variable [n] is not automatically 
+  Case "E_Ass".
+    (* Observe that the variable [n] is not automatically
        substituted because, contrary to [inversion E2; subst],
        the tactic [inverts E2] does not substitute the equalities
-       that exist before running the inversion. *)     
-    (* new: *) subst n. 
+       that exist before running the inversion. *)
+    (* new: *) subst n.
     reflexivity.
-  Case "E_Seq". 
+  Case "E_Seq".
     (* Here, the newly created variables can be introduced
        using intros, so they can be assigned meaningful names,
        for example [st3] instead of [st'0]. *)
@@ -186,12 +186,12 @@ Proof.
     assert (st' = st3) as EQ1.
       SCase "Proof of assertion". apply IHE1_1; assumption.
     subst st3.
-    apply IHE1_2. assumption. 
-  Case "E_IfTrue". 
+    apply IHE1_2. assumption.
+  Case "E_IfTrue".
     SCase "b1 evaluates to true".
       (* In an easy case like this one, there is no need to
          provide meaningful names, so we can just use [intros] *)
-      (* new: *) intros. 
+      (* new: *) intros.
       apply IHE1. assumption.
     SCase "b1 evaluates to false (contradiction)".
       (* new: *) intros.
@@ -199,15 +199,15 @@ Proof.
   (* The other cases are similiar *)
 Abort.
 
-(** In the particular case where a call to [inversion] produces 
-    a single subgoal, one can use the syntax [inverts H as H1 H2 H3] 
-    for calling [inverts] and naming the new hypotheses [H1], [H2] 
+(** In the particular case where a call to [inversion] produces
+    a single subgoal, one can use the syntax [inverts H as H1 H2 H3]
+    for calling [inverts] and naming the new hypotheses [H1], [H2]
     and [H3]. In other words, the tactic [inverts H as H1 H2 H3] is
     equivalent to [inverts H as; introv H1 H2 H3]. An example follows. *)
 
 Theorem skip_left': forall c,
   cequiv (SKIP;; c) c.
-Proof. 
+Proof.
   introv. split; intros H.
   inverts H as U V. (* new hypotheses are named [U] and [V] *)
   inverts U. assumption.
@@ -218,7 +218,7 @@ Abort.
 
 Example typing_nonexample_1 :
   ~ exists T,
-      has_type empty 
+      has_type empty
         (tabs x TBool
             (tabs y TBool
                (tapp (tvar x) (tvar y))))
@@ -233,7 +233,7 @@ Proof.
   inversion H4. subst. clear H4.
   inversion H2. subst. clear H2.
   inversion H5. subst. clear H5.
-  inversion H1. 
+  inversion H1.
 
   (* The new proof: *)
   intros C. destruct C.
@@ -265,7 +265,7 @@ End InvertsExamples.
 (* ####################################################### *)
 (** * Tactics for n-ary connectives *)
 
-(** Because Coq encodes conjunctions and disjunctions using binary 
+(** Because Coq encodes conjunctions and disjunctions using binary
     constructors [/\] and [\/], working with a conjunction or a
     disjunction of [N] facts can sometimes be quite cumbursome.
     For this reason, "LibTactics" provides tactics offering direct
@@ -276,16 +276,16 @@ End InvertsExamples.
     - [splits] for decomposing n-ary conjunctions,
     - [branch] for decomposing n-ary disjunctions,
     - [exists] for proving n-ary existentials. *)
-    
+
 Module NaryExamples.
-  Require Import References SfLib. 
+  Require Import References SfLib.
   Import STLCRef.
 
 
 (* ####################################################### *)
 (** ** The tactic [splits] *)
 
-(** The tactic [splits] applies to a goal made of a conjunction 
+(** The tactic [splits] applies to a goal made of a conjunction
     of [n] propositions and it produces [n] subgoals. For example,
     it decomposes the goal [G1 /\ G2 /\ G3] into the three subgoals
     [G1], [G2] and [G3]. *)
@@ -385,9 +385,9 @@ Proof.
   dup.
   (* The old proof: *)
   intros n m.
-  assert (H: 0 + n = n). reflexivity. rewrite -> H. 
+  assert (H: 0 + n = n). reflexivity. rewrite -> H.
   reflexivity.
-  
+
   (* The new proof: *)
   intros n m.
   asserts_rewrite (0 + n = n).
@@ -411,9 +411,9 @@ Proof.
     reflexivity. (* subgoal [0+n = n] *)
 Qed.
 
-(** More generally, the tactics [asserts_rewrite] and [cuts_rewrite] 
-    can be provided a lemma as argument. For example, one can write 
-    [asserts_rewrite (forall a b, a*(S b) = a*b+a)]. 
+(** More generally, the tactics [asserts_rewrite] and [cuts_rewrite]
+    can be provided a lemma as argument. For example, one can write
+    [asserts_rewrite (forall a b, a*(S b) = a*b+a)].
     This formulation is useful when [a] and [b] are big terms,
     since there is no need to repeat their statements. *)
 
@@ -433,10 +433,10 @@ Abort.
     does not fail when the goal contains "circular equalities",
     such as [x = f x]. *)
 
-Lemma demo_substs : forall x y (f:nat->nat), 
+Lemma demo_substs : forall x y (f:nat->nat),
   x = f x -> y = x -> y = f x.
 Proof.
-  intros. substs. (* the tactic [subst] would fail here *) 
+  intros. substs. (* the tactic [subst] would fail here *)
   assumption.
 Qed.
 
@@ -444,16 +444,16 @@ Qed.
 (* ####################################################### *)
 (** ** The tactic [fequals] *)
 
-(** The tactic [fequals] is similar to [f_equal] except that it 
-    directly discharges all the trivial subgoals produced. Moreover, 
+(** The tactic [fequals] is similar to [f_equal] except that it
+    directly discharges all the trivial subgoals produced. Moreover,
     the tactic [fequals] features an enhanced treatment of equalities
     between tuples. *)
 
 Lemma demo_fequals : forall (a b c d e : nat) (f : nat->nat->nat->nat->nat),
-  a = 1 -> b = e -> e = 2 -> 
+  a = 1 -> b = e -> e = 2 ->
   f a b c d = f 1 2 c 4.
 Proof.
-  intros. fequals. 
+  intros. fequals.
   (* subgoals [a = 1], [b = 2] and [c = c] are proved, [d = 4] remains *)
 Abort.
 
@@ -464,7 +464,7 @@ Abort.
 (** The tactic [applys_eq] is a variant of [eapply] that introduces
     equalities for subterms that do not unify. For example, assume
     the goal is the proposition [P x y] and assume we have the
-    assumption [H] asserting that [P x z] holds. We know that we can 
+    assumption [H] asserting that [P x z] holds. We know that we can
     prove [y] to be equal to [z]. So, we could call the tactic
     [assert_rewrite (y = z)] and change the goal to [P x z], but
     this would require copy-pasting the values of [y] and [z].
@@ -477,9 +477,9 @@ Abort.
     call to [applys_eq H 1 2]. *)
 
 Axiom big_expression_using : nat->nat. (* Used in the example *)
-  
-Lemma demo_applys_eq_1 : forall (P:nat->nat->Prop) x y z, 
-  P x (big_expression_using z) -> 
+
+Lemma demo_applys_eq_1 : forall (P:nat->nat->Prop) x y z,
+  P x (big_expression_using z) ->
   P x (big_expression_using y).
 Proof.
   introv H. dup.
@@ -498,8 +498,8 @@ Qed.
     the second, we would have written [applys_eq H 2]. Recall
     that the occurences are counted from the right. *)
 
-Lemma demo_applys_eq_2 : forall (P:nat->nat->Prop) x y z, 
-  P (big_expression_using z) x -> 
+Lemma demo_applys_eq_2 : forall (P:nat->nat->Prop) x y z,
+  P (big_expression_using z) x ->
   P (big_expression_using y) x.
 Proof.
   introv H. applys_eq H 2.
@@ -510,8 +510,8 @@ Abort.
     More generally, the tactic [applys_eq] expects a lemma and a
     sequence of natural numbers as arguments. *)
 
-Lemma demo_applys_eq_3 : forall (P:nat->nat->Prop) x1 x2 y1 y2, 
-  P (big_expression_using x2) (big_expression_using y2) -> 
+Lemma demo_applys_eq_3 : forall (P:nat->nat->Prop) x1 x2 y1 y2,
+  P (big_expression_using x2) (big_expression_using y2) ->
   P (big_expression_using x1) (big_expression_using y1).
 Proof.
   introv H. applys_eq H 1 2.
@@ -526,7 +526,7 @@ End EqualityExamples.
 (* ####################################################### *)
 (** * Some convenient shorthands *)
 
-(** This section of the tutorial introduces a few tactics 
+(** This section of the tutorial introduces a few tactics
     that help make proof scripts shorter and more readable:
     - [unfolds] (without argument) for unfolding the head definition,
     - [false] for replacing the goal with [False],
@@ -543,7 +543,7 @@ Module UnfoldsExample.
   Require Import Hoare.
 
 (** The tactic [unfolds] (without any argument) unfolds the
-    head constant of the goal. This tactic saves the need to 
+    head constant of the goal. This tactic saves the need to
     name the constant explicitly. *)
 
 Lemma bexp_eval_true : forall b st,
@@ -555,13 +555,13 @@ Proof.
   unfold bassn. assumption.
 
   (* The new proof: *)
-  unfolds. assumption. 
+  unfolds. assumption.
 Qed.
 
 (** Remark: contrary to the tactic [hnf], which may unfold several
     constants, [unfolds] performs only a single step of unfolding. *)
 
-(** Remark: the tactic [unfolds in H] can be used to unfold the 
+(** Remark: the tactic [unfolds in H] can be used to unfold the
     head definition of the hypothesis [H]. *)
 
 End UnfoldsExample.
@@ -571,12 +571,12 @@ End UnfoldsExample.
 (** ** The tactics [false] and [tryfalse] *)
 
 (** The tactic [false] can be used to replace any goal with [False].
-    In short, it is a shorthand for [apply ex_falso_quodlibet]. 
-    Moreover, [false] proves the goal if it contains an absurd 
+    In short, it is a shorthand for [apply ex_falso_quodlibet].
+    Moreover, [false] proves the goal if it contains an absurd
     assumption, such as [False] or [0 = S n], or if it contains
     contradictory assumptions, such as [x = true] and [x = false]. *)
 
-Lemma demo_false : 
+Lemma demo_false :
   forall n, S n = 1 -> n = 0.
 Proof.
   intros. destruct n. reflexivity. false.
@@ -585,7 +585,7 @@ Qed.
 (** The tactic [false] can be given an argument: [false H] replace
     the goals with [False] and then applies [H]. *)
 
-Lemma demo_false_arg : 
+Lemma demo_false_arg :
   (forall n, n < 0 -> False) -> (3 < 0) -> 4 < 0.
 Proof.
   intros H L. false H. apply L.
@@ -595,7 +595,7 @@ Qed.
     it tries to find a contradiction in the goal. The tactic
     [tryfalse] is generally called after a case analysis. *)
 
-Lemma demo_tryfalse : 
+Lemma demo_tryfalse :
   forall n, S n = 1 -> n = 0.
 Proof.
   intros. destruct n; tryfalse. reflexivity.
@@ -606,7 +606,7 @@ Qed.
 (** ** The tactic [gen] *)
 
 (** The tactic [gen] is a shortand for [generalize dependent]
-    that accepts several arguments at once. An invokation of 
+    that accepts several arguments at once. An invokation of
     this tactic takes the form [gen x y z]. *)
 
 Module GenExample.
@@ -627,7 +627,7 @@ Proof.
   admit. admit. admit. admit. admit. admit.
 
   (* The new proof: *)
-  introv Htypt Htypv. gen S Gamma. 
+  introv Htypt Htypv. gen S Gamma.
   induction t; intros; simpl.
   admit. admit. admit. admit. admit. admit.
 Qed.
@@ -639,18 +639,18 @@ End GenExample.
 (** ** The tactics [skip], [skip_rewrite] and [skip_goal] *)
 
 (** Temporarily admitting a given subgoal is very useful when
-    constructing proofs. It gives the ability to focus first 
+    constructing proofs. It gives the ability to focus first
     on the most interesting cases of a proof. The tactic [skip]
-    is like [admit] except that it also works when the proof 
-    includes existential variables. Recall that existential 
-    variables are those whose name starts with a question mark, 
+    is like [admit] except that it also works when the proof
+    includes existential variables. Recall that existential
+    variables are those whose name starts with a question mark,
     e.g. [?24], and which are typically introduced by [eapply]. *)
 
 Module SkipExample.
   Require Import Stlc.
   Import STLC.
 
-Example astep_example1 : 
+Example astep_example1 :
   (APlus (ANum 3) (AMult (ANum 3) (ANum 4))) / empty_state ==>a* (ANum 15).
 Proof.
   eapply multi_step. skip. (* the tactic [admit] would not work here *)
@@ -660,9 +660,9 @@ Proof.
      [Abort] instead of [Qed] at the end of the proof. *)
 Abort.
 
-(** The tactic [skip H: P] adds the hypothesis [H: P] to the context, 
-    without checking whether the proposition [P] is true. 
-    It is useful for exploiting a fact and postponing its proof. 
+(** The tactic [skip H: P] adds the hypothesis [H: P] to the context,
+    without checking whether the proposition [P] is true.
+    It is useful for exploiting a fact and postponing its proof.
     Note: [skip H: P] is simply a shorthand for [assert (H:P). skip.] *)
 
 Theorem demo_skipH : True.
@@ -680,7 +680,7 @@ Proof.
 
   (* The old proof: *)
   intros n m.
-  assert (H: 0 + n = n). skip. rewrite -> H. 
+  assert (H: 0 + n = n). skip. rewrite -> H.
   reflexivity.
 
   (* The new proof: *)
@@ -694,7 +694,7 @@ Qed.
 
 (** The tactic [skip_goal] adds the current goal as hypothesis.
     This cheat is useful to set up the structure of a proof by
-    induction without having to worry about the induction hypothesis 
+    induction without having to worry about the induction hypothesis
     being applied only to smaller arguments. Using [skip_goal], one
     can construct a proof in two steps: first, check that the main
     arguments go through without waisting time on fixing the details
@@ -705,8 +705,8 @@ Theorem ceval_deterministic: forall c st st1 st2,
   c / st || st1 ->
   c / st || st2 ->
   st1 = st2.
-Proof.  
-  (* The tactic [skip_goal] creates an hypothesis called [IH] 
+Proof.
+  (* The tactic [skip_goal] creates an hypothesis called [IH]
      asserting that the statment of [ceval_deterministic] is true. *)
   skip_goal.
   (* Of course, if we call [assumption] here, then the goal is solved
@@ -715,13 +715,13 @@ Proof.
   introv E1 E2. gen st2.
   (ceval_cases (induction E1) Case); introv E2; inverts E2 as.
   Case "E_Skip". reflexivity.
-  Case "E_Ass". 
-    subst n. 
+  Case "E_Ass".
+    subst n.
     reflexivity.
-  Case "E_Seq". 
+  Case "E_Seq".
     intros st3 Red1 Red2.
     assert (st' = st3) as EQ1.
-      SCase "Proof of assertion". 
+      SCase "Proof of assertion".
         (* was: [apply IHE1_1; assumption.] *)
         (* new: *) eapply IH. eapply E1_1. eapply Red1.
     subst st3.
@@ -747,7 +747,7 @@ Theorem ceval_deterministic: forall c st st1 st2,
   c / st || st1 ->
   c / st || st2 ->
   st1 = st2.
-Proof. 
+Proof.
   intros c st st1 st2 E1 E2.
   generalize dependent st2.
   (ceval_cases (induction E1) Case); intros st2 E2; inverts E2.
@@ -761,16 +761,16 @@ End SortExamples.
 (* ####################################################### *)
 (** * Tactics for advanced lemma instantiation *)
 
-(** This last section describes a mechanism for instantiating a lemma 
-    by providing some of its arguments and leaving other implicit. 
-    Variables whose instantiation is not provided are turned into 
-    existentential variables, and facts whose instantiation is not 
-    provided are turned into subgoals. 
-    
-    Remark: this instantion mechanism goes far beyond the abilities of 
-    the "Implicit Arguments" mechanism. The point of the instantiation 
-    mechanism described in this section is that you will no longer need 
-    to spend time figuring out how many underscore symbols you need to 
+(** This last section describes a mechanism for instantiating a lemma
+    by providing some of its arguments and leaving other implicit.
+    Variables whose instantiation is not provided are turned into
+    existentential variables, and facts whose instantiation is not
+    provided are turned into subgoals.
+
+    Remark: this instantion mechanism goes far beyond the abilities of
+    the "Implicit Arguments" mechanism. The point of the instantiation
+    mechanism described in this section is that you will no longer need
+    to spend time figuring out how many underscore symbols you need to
     write. *)
 
 (** In this section, we'll use a useful feature of Coq for decomposing
@@ -793,13 +793,13 @@ End SortExamples.
     it also makes the proof scripts look prettly ugly. With the tactic
     [lets], one can simply write:
     [lets (T & Hctx & Hsub): typing_inversion_var Htypt.]
-   
-    In short, this tactic [lets] allows to specialize a lemma on a bunch 
-    of variables and hypotheses. The syntax is [lets I: E0 E1 .. EN], 
-    for building an hypothesis named [I] by applying the fact [E0] to the 
+
+    In short, this tactic [lets] allows to specialize a lemma on a bunch
+    of variables and hypotheses. The syntax is [lets I: E0 E1 .. EN],
+    for building an hypothesis named [I] by applying the fact [E0] to the
     arguments [E1] to [EN]. Not all the arguments need to be provided,
     however the arguments that are provided need to be provided in the
-    correct order. The tactic relies on a first-match algorithm based on 
+    correct order. The tactic relies on a first-match algorithm based on
     types in order to figure out how the to instantiate the lemma with
     the arguments provided. *)
 
@@ -815,17 +815,17 @@ Axiom typing_inversion_var : forall (G:context) (x:id) (T:ty),
 
 (** First, assume we have an assumption [H] with the type of the form
     [has_type G (tvar x) T]. We can obtain the conclusion of the
-    lemma [typing_inversion_var] by invoking the tactics 
+    lemma [typing_inversion_var] by invoking the tactics
     [lets K: typing_inversion_var H], as shown next. *)
 
-Lemma demo_lets_1 : forall (G:context) (x:id) (T:ty), 
+Lemma demo_lets_1 : forall (G:context) (x:id) (T:ty),
   has_type G (tvar x) T -> True.
 Proof.
-  intros G x T H. dup. 
+  intros G x T H. dup.
 
   (* step-by-step: *)
   lets K: typing_inversion_var H.
-  destruct K as (S & Eq & Sub). 
+  destruct K as (S & Eq & Sub).
   admit.
 
   (* all-at-once: *)
@@ -843,7 +843,7 @@ Qed.
 
 Lemma demo_lets_2 : forall (G:context) (x:id) (T:ty), True.
 Proof.
-  intros G x T. 
+  intros G x T.
   lets (S & Eq & Sub): typing_inversion_var G x T ___.
 Abort.
 
@@ -851,12 +851,12 @@ Abort.
     going to be suitable for proving [has_type G (tvar x) T], so
     we don't really need to bother giving [G] and [T] explicitly.
     It suffices to call [lets (S & Eq & Sub): typing_inversion_var x].
-    The variables [G] and [T] are then instantiated using existential 
+    The variables [G] and [T] are then instantiated using existential
     variables. *)
 
 Lemma demo_lets_3 : forall (x:id), True.
 Proof.
-  intros x. 
+  intros x.
   lets (S & Eq & Sub): typing_inversion_var x ___.
 Abort.
 
@@ -869,8 +869,8 @@ Proof.
   lets (S & Eq & Sub): typing_inversion_var ___.
 Abort.
 
-(** Note: if we provide [lets] with only the name of the lemma as 
-    argument, it simply adds this lemma in the proof context, without 
+(** Note: if we provide [lets] with only the name of the lemma as
+    argument, it simply adds this lemma in the proof context, without
     trying to instantiate any of its arguments. *)
 
 Lemma demo_lets_5 : True.
@@ -885,7 +885,7 @@ Abort.
     [m] to be instantiated as the value [3], but without specifying a
     value for [n]. This can be achieved by writting [lets K: H __ 3]. *)
 
-Lemma demo_lets_underscore : 
+Lemma demo_lets_underscore :
   (forall n m, n <= m -> n < m+1) -> True.
 Proof.
   intros H.
@@ -895,8 +895,8 @@ Proof.
   lets K: H 3. (* gives [K] of type [forall m, 3 <= m -> 3 < m+1] *)
     clear K.
 
-  (* The double underscore preceeding [3] indicates that we want 
-     to skip a value that has the type [nat] (because [3] has 
+  (* The double underscore preceeding [3] indicates that we want
+     to skip a value that has the type [nat] (because [3] has
      the type [nat]). So, the variable [m] gets instiated as [3]. *)
   lets K: H __ 3. (* gives [K] of type [?X <= 3 -> ?X < 3+1] *)
     clear K.
@@ -917,23 +917,23 @@ End ExamplesLets.
 (* ####################################################### *)
 (** ** Working of [applys], [forwards] and [specializes] *)
 
-(** The tactics [applys], [forwards] and [specializes] are 
+(** The tactics [applys], [forwards] and [specializes] are
     shorthand that may be used in place of [lets] to perform
     specific tasks.
 
     - [forwards] is a shorthand for instantiating all the arguments
-    of a lemma. More precisely, [forwards H: E0 E1 E2 E3] is the 
-    same as [lets H: E0 E1 E2 E3 ___], where the triple-underscore 
-    has the same meaning as explained earlier on. 
+    of a lemma. More precisely, [forwards H: E0 E1 E2 E3] is the
+    same as [lets H: E0 E1 E2 E3 ___], where the triple-underscore
+    has the same meaning as explained earlier on.
 
     - [applys] allows building a lemma using the advanced instantion
     mode of [lets], and then apply that lemma right away. So,
     [applys E0 E1 E2 E3] is the same as [lets H: E0 E1 E2 E3]
-    followed with [eapply H] and then [clear H]. 
-    
-    - [specializes] is a shorthand for instantiating in-place 
+    followed with [eapply H] and then [clear H].
+
+    - [specializes] is a shorthand for instantiating in-place
     an assumption from the context with particular arguments.
-    More precisely, [specializes H E0 E1] is the same as 
+    More precisely, [specializes H E0 E1] is the same as
     [lets H': H E0 E1] followed with [clear H] and [rename H' into H].
 
     Examples of use of [applys] appear further on. Several examples of
@@ -974,18 +974,18 @@ Proof with eauto.
       intros x Hcontra.
 
        (* A more involved example. *)
-       (* old: destruct (free_in_context _ _ S empty Hcontra) 
+       (* old: destruct (free_in_context _ _ S empty Hcontra)
                  as [T' HT']... *)
        (* new: *)
         lets [T' HT']: free_in_context S empty Hcontra...
         inversion HT'.
   Case "tapp".
-    
+
     (* Exercise: replace the following [destruct] with a [lets]. *)
-    (* old: destruct (typing_inversion_app _ _ _ _ Htypt) 
+    (* old: destruct (typing_inversion_app _ _ _ _ Htypt)
               as [T1 [Htypt1 Htypt2]]. eapply T_App... *)
     (* FILL IN HERE *) admit.
-    
+
   Case "tabs".
     rename i into y. rename t into T1.
 
@@ -1000,7 +1000,7 @@ Proof with eauto.
     destruct (eq_id_dec x y).
     SCase "x=y".
       eapply context_invariance...
-      subst. 
+      subst.
       intros x Hafi. unfold extend.
       destruct (eq_id_dec y x)...
     SCase "x<>y".
@@ -1014,13 +1014,13 @@ Proof with eauto.
     lets: typing_inversion_false Htypt...
   Case "tif".
     lets (Htyp1&Htyp2&Htyp3): typing_inversion_if Htypt...
-  Case "tunit". 
+  Case "tunit".
     (* An example where [assert] can be replaced with [lets]. *)
-    (* old: assert (subtype TUnit S) 
+    (* old: assert (subtype TUnit S)
              by apply (typing_inversion_unit _ _ Htypt)... *)
     (* new: *) lets: typing_inversion_unit Htypt...
 
-  
+
 Qed.
 
 End ExamplesInstantiations.
@@ -1030,35 +1030,35 @@ End ExamplesInstantiations.
 (** * Summary *)
 
 (** In this chapter we have presented a number of tactics that help make
-    proof script more concise and more robust on change. 
- 
+    proof script more concise and more robust on change.
+
     - [introv] and [inverts] improve naming and inversions.
 
     - [false] and [tryfalse] help discarding absurd goals.
- 
+
     - [unfolds] automatically calls [unfold] on the head definition.
 
     - [gen] helps setting up goals for induction.
 
     - [cases] and [cases_if] help with case analysis.
-  
+
     - [splits], [branch] and [exists] to deal with n-ary constructs.
 
     - [asserts_rewrite], [cuts_rewrite], [substs] and [fequals] help
       working with equalities.
-  
+
     - [lets], [forwards], [specializes] and [applys] provide means
       of very conveniently instantiating lemmas.
-      
+
     - [applys_eq] can save the need to perform manual rewriting steps
       before being able to apply lemma.
-    
+
     - [skip], [skip_rewrite] and [skip_goal] give the flexibility to
       choose which subgoals to try and discharge first.
 
     Making use of these tactics can boost one's productivity in Coq proofs.
 
-    If you are interested in using [LibTactics.v] in your own developments, 
+    If you are interested in using [LibTactics.v] in your own developments,
     make sure you get the lastest version from:
     http://www.chargueraud.org/softs/tlc/ .
 
