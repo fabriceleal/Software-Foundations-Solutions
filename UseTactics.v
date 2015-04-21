@@ -245,11 +245,7 @@ Proof.
 
   (* The new proof, alternative: *)
   intros C. destruct C.
-  inverts H as H.
-  inverts H as H.
-  inverts H as H.
-  inverts H as H.
-  inverts H.
+  repeat (inverts H as H).
 Qed.
 
 End InvertsExamples.
@@ -984,7 +980,7 @@ Proof with eauto.
     (* Exercise: replace the following [destruct] with a [lets]. *)
     (* old: destruct (typing_inversion_app _ _ _ _ Htypt)
               as [T1 [Htypt1 Htypt2]]. eapply T_App... *)
-    (* FILL IN HERE *) admit.
+    lets (T1&Htypt1&Htypt2): typing_inversion_app Htypt...
 
   Case "tabs".
     rename i into y. rename t into T1.
@@ -1014,6 +1010,12 @@ Proof with eauto.
     lets: typing_inversion_false Htypt...
   Case "tif".
     lets (Htyp1&Htyp2&Htyp3): typing_inversion_if Htypt...
+  Case "tpair".
+    lets (Htyp1&Htyp2&Htyp3&Htyp4&Htyp5): typing_inversion_pair Htypt...
+  Case "tfst".
+    lets (Htyp1): typing_inversion_fst Htypt...
+  Case "tsnd".
+    lets (Htyp1): typing_inversion_snd Htypt...
   Case "tunit".
     (* An example where [assert] can be replaced with [lets]. *)
     (* old: assert (subtype TUnit S)
