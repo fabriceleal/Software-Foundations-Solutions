@@ -385,6 +385,115 @@ Definition frame (c: scom) : Prop :=
          /\ disjoint h1' h2
          /\ h_union h1' h2 = h'.
 
+Lemma multistep_seq: forall cs c2 cs', multiStep cs cs' ->
+                        multiStep (SCSeq (fst cs) c2, (snd cs)) (SCSeq (fst cs') c2, (snd cs')).
+Proof.
+  intros.
+  induction H. constructor.
+  econstructor; eauto.
+Qed.
+
+Lemma safeAt_seq: forall c1 c2 s h, safeAt (SCSeq c1 c2) (s, h) ->
+                      safeAt c1 (s, h).
+Proof.
+  unfold safeAt. intros.
+  assert (multiStep (SCSeq c1 c2, St (s, h)) (SCSeq c' c2, St s')).
+  remember (c1, St (s, h)) as cs. remember (c', St s') as cs'.
+  apply multistep_seq with (c2 := c2) in H0. subst. auto.
+  apply H in H1. destruct H1. inversion H1. destruct H1 as [c'' [s'' H_s]].
+  inversion H_s; subst. right. eauto. left. auto.
+Qed.
+
+Lemma union_none: forall h1 h2 x,
+                    h_union h1 h2 x = None ->
+                    h1 x = None /\ h2 x = None.
+Proof.
+  intros. unfold h_union in *. destruct (in_not_in_dec x h1).
+  split; auto. destruct i. congruence.
+  split; auto.
+Qed.
+
+Lemma disjoint_update: forall h1 h2 x n,
+                         disjoint h1 h2 ->
+                         h2 x = None ->
+                         disjoint (h_update h1 x n) h2.
+Proof.
+  unfold disjoint, not_in_dom. intros.
+  unfold h_update. destruct (eq_nat_dec x l). subst.
+  auto. auto.
+Qed.
+
+Hint Resolve disjoint_update.
+
+Lemma union_update: forall h1 h2 x n,
+                      h_union (h_update h1 x n) h2 =
+                      h_update (h_union h1 h2) x n.
+Proof.
+  intros. apply functional_extensionality. intros.
+  unfold h_union, h_update.
+  destruct (eq_nat_dec x x0); destruct (in_not_in_dec x0);auto.
+  unfold not_in_dom in n0. subst. destruct (eq_nat_dec x0 x0); congruence.
+  destruct i. destruct (eq_nat_dec x x0). congruence.
+  destruct (in_not_in_dec x0 h1). reflexivity. congruence.
+  unfold not_in_dom in n1. destruct (eq_nat_dec x x0). congruence.
+  destruct (in_not_in_dec x0 h1). destruct i. congruence. reflexivity.
+Qed.
+
+Lemma update_disjoint: forall h1 h2 x n,
+                         disjoint h1 h2 ->
+                         in_dom x h1 ->
+                         disjoint (h_update h1 x n) h2.
+Proof.
+  unfold in_dom, h_update, disjoint, not_in_dom. intros.
+  destruct (eq_nat_dec x l). subst. destruct H0. destruct (H l).
+  congruence. auto. auto.
+Qed.
+
+Hint Resolve update_disjoint.
+
+Lemma locality_frame: forall c : scom, frame c.
+Proof.
+  unfold frame. induction c; intros; inversion H1; subst; try solve [exists h1; eauto].
+  Case "Seq".
+  apply safeAt_seq in H.
+  destruct (IHc1 s h1 h2 c1' s' h' H H0 H3) as [h'' [H5 [H6 H7]]].
+  exists h''. eauto.
+  Case "Cons".
+  exists (h_update (h_update h1 l (aeval s a)) (l + 1) (aeval s a0)).
+  destruct (union_none h1 h2 l H12).
+  destruct (union_none h1 h2 (l+1) H13).
+  repeat split. constructor; eauto. eapply disjoint_update; eauto.
+  rewrite union_update. rewrite union_update. reflexivity.
+  Case "Lookup".
+  assert (multiStep (SCLookup i a, St (s, h1)) (SCLookup i a, St (s, h1))).
+  constructor. apply H in H2. destruct H2. inversion H2.
+  destruct H2 as [c'' [s'' H_s]]. inversion H_s; subst.
+  exists h1. repeat split; auto. unfold h_union in H10.
+  destruct (in_not_in_dec (aeval s a) h1). rewrite H10 in H9. inversion H9; subst.
+  auto. congruence.
+  Case "Mutation".
+  assert (multiStep (SCMutation a a0, St (s', h1)) (SCMutation a a0, St (s', h1))).
+  constructor. apply H in H2. destruct H2. inversion H2.
+  destruct H2 as [c'' [s'' H_s]]. inversion H_s; subst.
+  exists (h_update h1 (aeval s' a) (aeval s' a0)).
+  repeat split; eauto. rewrite union_update. auto.
+  Case "Dispose".
+  assert (multiStep (SCDispose a, St (s', h1)) (SCDispose a, St (s', h1))).
+  constructor. apply H in H2. destruct H2. inversion H2.
+  destruct H2 as [c'' [s'' H_s]]. inversion H_s; subst.
+  exists (fun x => if eq_nat_dec x (aeval s' a) then None else h1 x).
+  repeat split; eauto. unfold disjoint, not_in_dom. intros.
+  destruct (eq_nat_dec l (aeval s' a)). left. auto. destruct (H0 l); auto.
+  apply functional_extensionality. intros.
+  unfold h_union. destruct (in_not_in_dec x).
+  auto. destruct i. destruct (eq_nat_dec x (aeval s' a)). auto.
+  destruct (in_not_in_dec x h1). auto. congruence.
+  unfold not_in_dom in n. destruct (eq_nat_dec x (aeval s' a)).
+  subst. destruct (H0 (aeval s' a)). destruct H8. congruence.
+  auto. destruct (in_not_in_dec x h1). destruct i. congruence.
+  reflexivity.
+Qed.
+
 (* Lemma small_step_mono: *)
 (*   forall c c' s s' h1 h2 h', *)
 (*     small_step (c, St (s, h1)) (c', St (s', h')) -> *)
@@ -419,20 +528,4 @@ Qed.
 
 Theorem locality: forall c : scom, safeMono c /\ frame c.
 Proof.
-  intros. split.
-  Case "safeMono".
-  induction c;
-  unfold safeMono, safeAt; intros.
-  SCase "skip".
-  inversion H1; subst. auto. inversion H5.
-  SCase "ass".
-  inversion H1; subst. right.
-  exists SCSkip. exists (st_update s i (aeval s a), h_union h h'). eauto.
-  inversion H5; subst. inversion H7; subst; eauto. inversion H6.
-  SCase "seq".
-  inversion H1; subst. right. clear H1.
-  assert (SCSeq c1 c2 = SCSkip \/
-           (exists c'' s'', small_step (SCSeq c1 c2, St (s, h)) (c'', St s''))).
-  apply H. constructor. destruct H1. inversion H1. destruct H1 as [c'' [s'' H_s]].
-  inversion H_s; subst.
-  Abort.
+  admit.

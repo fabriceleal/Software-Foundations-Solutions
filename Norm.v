@@ -1232,7 +1232,7 @@ Proof.
   Case "T_App".
     rewrite msubst_app.
     destruct (IHHT1 c H env0 V) as [_ [_ P1]].
-    pose proof (IHHT2 c H env0 V) as P2.  fold R in P1.  auto.
+    pose proof (IHHT2 c H env0 V) as P2. fold R in P1.  auto.
   Case "T_Pair".
     rewrite msubst_pair.
     pose proof (IHHT1 c H env0 V). pose proof (IHHT2 c H env0 V).

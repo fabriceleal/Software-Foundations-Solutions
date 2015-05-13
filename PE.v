@@ -76,18 +76,18 @@ Definition empty_pe_state : pe_state := [].
     tactic for reasoning with [id] equality.  The tactic
         compare V V' SCase
     means to reason by cases over [eq_id_dec V V'].
-    In the case where [V = V'], the tactic 
+    In the case where [V = V'], the tactic
     substitutes [V] for [V'] throughout. *)
 
 Tactic Notation "compare" ident(i) ident(j) ident(c) :=
   let H := fresh "Heq" i j in
-  destruct (eq_id_dec i j); 
+  destruct (eq_id_dec i j);
   [ Case_aux c "equal"; subst j
   | Case_aux c "not equal" ].
 
 Theorem pe_domain: forall pe_st V n,
   pe_lookup pe_st V = Some n ->
-  In V (map (@fst _ _) pe_st). 
+  In V (map (@fst _ _) pe_st).
 Proof. intros pe_st V n H. induction pe_st as [| [V' n'] pe_st].
   Case "[]". inversion H.
   Case "::". simpl in H. simpl. compare V V' SCase; auto. Qed.
@@ -109,7 +109,7 @@ Print In.
 (**    [In] comes with various useful lemmas.  *)
 
 Check in_or_app.
-(* ===>  in_or_app: forall (A : Type) (l m : list A) (a : A), 
+(* ===>  in_or_app: forall (A : Type) (l m : list A) (a : A),
                 In a l \/ In a m -> In a (l ++ m) *)
 
 Check filter_In.
@@ -142,7 +142,7 @@ Fixpoint pe_aexp (pe_st : pe_state) (a : aexp) : aexp :=
       | (ANum n1, ANum n2) => ANum (n1 + n2)
       | (a1', a2') => APlus a1' a2'
       end
-  | AMinus a1 a2 => 
+  | AMinus a1 a2 =>
       match (pe_aexp pe_st a1, pe_aexp pe_st a2) with
       | (ANum n1, ANum n2) => ANum (n1 - n2)
       | (a1', a2') => AMinus a1' a2'
@@ -245,7 +245,7 @@ Theorem pe_override_correct: forall st pe_st V0,
   | None => st V0
   end.
 Proof. intros. induction pe_st as [| [V n] pe_st]. reflexivity.
-  simpl in *. unfold update. 
+  simpl in *. unfold update.
   compare V0 V Case; auto. rewrite eq_id; auto. rewrite neq_id; auto. Qed.
 
 (** We can relate [pe_consistent] to [pe_override] in two ways.
@@ -287,7 +287,7 @@ Proof.
     try (destruct (pe_aexp pe_st a1);
          destruct (pe_aexp pe_st a2);
          rewrite IHa1; rewrite IHa2; reflexivity).
-  (* Compared to fold_constants_aexp_sound, the only 
+  (* Compared to fold_constants_aexp_sound, the only
      interesting case is AId. *)
   rewrite pe_override_correct. destruct (pe_lookup pe_st i); reflexivity.
 Qed.
@@ -302,7 +302,7 @@ Fixpoint pe_bexp (pe_st : pe_state) (b : bexp) : bexp :=
   match b with
   | BTrue        => BTrue
   | BFalse       => BFalse
-  | BEq a1 a2 => 
+  | BEq a1 a2 =>
       match (pe_aexp pe_st a1, pe_aexp pe_st a2) with
       | (ANum n1, ANum n2) => if beq_nat n1 n2 then BTrue else BFalse
       | (a1', a2') => BEq a1' a2'
@@ -312,7 +312,7 @@ Fixpoint pe_bexp (pe_st : pe_state) (b : bexp) : bexp :=
       | (ANum n1, ANum n2) => if ble_nat n1 n2 then BTrue else BFalse
       | (a1', a2') => BLe a1' a2'
       end
-  | BNot b1 => 
+  | BNot b1 =>
       match (pe_bexp pe_st b1) with
       | BTrue => BFalse
       | BFalse => BTrue
@@ -434,9 +434,9 @@ Proof. intros pe_st V V0. induction pe_st as [| [V' n'] pe_st].
   Case "[]". destruct (eq_id_dec V V0); reflexivity.
   Case "::". simpl. compare V V' SCase.
     SCase "equal". rewrite IHpe_st.
-      destruct (eq_id_dec V V0).  reflexivity.  rewrite neq_id; auto. 
+      destruct (eq_id_dec V V0).  reflexivity.  rewrite neq_id; auto.
     SCase "not equal". simpl. compare V0 V' SSCase.
-      SSCase "equal". rewrite neq_id; auto. 
+      SSCase "equal". rewrite neq_id; auto.
       SSCase "not equal". rewrite IHpe_st. reflexivity.
 Qed.
 
@@ -446,10 +446,10 @@ Definition pe_add (pe_st:pe_state) (V:id) (n:nat) : pe_state :=
 Theorem pe_add_correct: forall pe_st V n V0,
   pe_lookup (pe_add pe_st V n) V0
   = if eq_id_dec V V0 then Some n else pe_lookup pe_st V0.
-Proof. intros pe_st V n V0. unfold pe_add. simpl. 
+Proof. intros pe_st V n V0. unfold pe_add. simpl.
   compare V V0 Case.
-  Case "equal". rewrite eq_id; auto. 
-  Case "not equal". rewrite pe_remove_correct. repeat rewrite neq_id; auto. 
+  Case "equal". rewrite eq_id; auto.
+  Case "not equal". rewrite pe_remove_correct. repeat rewrite neq_id; auto.
 Qed.
 
 (** We will use the two theorems below to show that our partial
@@ -551,17 +551,17 @@ Fixpoint pe_unique (l : list id) : list id :=
 Theorem pe_unique_correct: forall l x,
   In x l <-> In x (pe_unique l).
 Proof. intros l x. induction l as [| h t]. reflexivity.
-  simpl in *. split. 
-  Case "->". 
-    intros. inversion H; clear H. 
-      left. assumption. 
-      destruct (eq_id_dec h x). 
+  simpl in *. split.
+  Case "->".
+    intros. inversion H; clear H.
+      left. assumption.
+      destruct (eq_id_dec h x).
          left.  assumption.
-         right.  apply filter_In. split. 
+         right.  apply filter_In. split.
            apply IHt. assumption.
-           rewrite neq_id; auto. 
-  Case "<-". 
-    intros. inversion H; clear H. 
+           rewrite neq_id; auto.
+  Case "<-".
+    intros. inversion H; clear H.
        left. assumption.
        apply filter_In in H0.  inversion H0. right. apply IHt. assumption.
 Qed.
@@ -579,8 +579,8 @@ Proof. intros pe_st1 pe_st2 V.
   Case "->".
     intro. destruct H. unfold pe_disagree_at in H0. rewrite Heq in H0.
     destruct (pe_lookup pe_st2 V).
-    rewrite <- beq_nat_refl in H0. inversion H0. 
-    inversion H0. 
+    rewrite <- beq_nat_refl in H0. inversion H0.
+    inversion H0.
   Case "<-".
     assert (Hagree: pe_disagree_at pe_st1 pe_st2 V = false).
       SCase "Proof of assertion".
@@ -620,9 +620,9 @@ Theorem pe_removes_correct: forall pe_st ids V,
   if in_dec eq_id_dec V ids then None else pe_lookup pe_st V.
 Proof. intros pe_st ids V. induction ids as [| V' ids]. reflexivity.
   simpl. rewrite pe_remove_correct. rewrite IHids.
-  compare V' V Case. 
-    reflexivity. 
-    destruct (in_dec eq_id_dec V ids);  
+  compare V' V Case.
+    reflexivity.
+    destruct (in_dec eq_id_dec V ids);
       reflexivity.
 Qed.
 
@@ -692,11 +692,11 @@ Proof. intros pe_st ids st. induction ids as [| V ids]; simpl.
     SCase "Some". eapply E_Seq. apply IHids. unfold assigned. simpl.
       eapply ceval_extensionality. apply E_Ass. simpl. reflexivity.
       intros V0. unfold update.  compare V V0 SSCase.
-      SSCase "equal". rewrite <- Heqlookup. reflexivity. 
-      SSCase "not equal". destruct (in_dec eq_id_dec V0 ids); auto.  
+      SSCase "equal". rewrite <- Heqlookup. reflexivity.
+      SSCase "not equal". destruct (in_dec eq_id_dec V0 ids); auto.
     SCase "None". eapply ceval_extensionality. apply IHids.
       unfold assigned. intros V0. simpl. compare V V0 SSCase.
-      SSCase "equal". rewrite <- Heqlookup. 
+      SSCase "equal". rewrite <- Heqlookup.
         destruct (in_dec eq_id_dec V ids); reflexivity.
       SSCase "not equal". destruct (in_dec eq_id_dec V0 ids); reflexivity. Qed.
 
