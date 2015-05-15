@@ -374,18 +374,6 @@ forall c' s',
   multiStep (c, St s) (c', St s')
   -> c' = SCSkip \/ exists c'', exists s'', small_step (c', St s') (c'', St s'').
 
-Definition safeAt_wtf (c: scom) (s:sstate) : Prop :=
-  forall cs cs',
-    multiStep cs cs' -> fst cs = c -> snd cs = St s ->
-    (exists s', snd cs' = St s') ->
-    fst cs' = SCSkip \/ exists c', exists s', small_step cs' (c', St s').
-
-Lemma safeAt_imply: forall c s, safeAt_wtf c s -> safeAt c s.
-Proof.
-  unfold safeAt_wtf, safeAt. intros.
-  apply H in H0; eauto. exists s'. auto.
-Qed.
-
 Lemma small_abt: forall c c' s, small_step (c, Abt) (c', s) ->
                       s = Abt.
 Proof.
@@ -481,46 +469,45 @@ Qed.
 Hint Resolve update_disjoint.
 
 Lemma locality_frame: forall c : scom, frame c.
-Proof.
+Proof with eauto.
   unfold frame. induction c; intros; inversion H1; subst; try solve [exists h1; eauto].
   Case "Seq".
   apply safeAt_seq in H.
-  destruct (IHc1 s h1 h2 c1' s' h' H H0 H3) as [h'' [H5 [H6 H7]]].
+  eapply IHc1 in H... destruct H as [h'' [H5 [H6 H7]]].
   exists h''. eauto.
   Case "Cons".
   exists (h_update (h_update h1 l (aeval s a)) (l + 1) (aeval s a0)).
   destruct (union_none h1 h2 l H12).
   destruct (union_none h1 h2 (l+1) H13).
-  repeat split. constructor; eauto. eapply disjoint_update; eauto.
+  repeat split. constructor... eapply disjoint_update...
   rewrite union_update. rewrite union_update. reflexivity.
   Case "Lookup".
   assert (multiStep (SCLookup i a, St (s, h1)) (SCLookup i a, St (s, h1))).
   constructor. apply H in H2. destruct H2. inversion H2.
   destruct H2 as [c'' [s'' H_s]]. inversion H_s; subst.
-  exists h1. repeat split; auto. unfold h_union in H3.
-  destruct (in_not_in_dec (aeval s a) h1). rewrite H3 in H4. inversion H4; subst.
-  auto. congruence.
+  exists h1. repeat split... unfold h_union in H3.
+  destruct (in_not_in_dec (aeval s a) h1). rewrite H3 in H4.
+  inversion H4; subst... congruence.
   Case "Mutation".
   assert (multiStep (SCMutation a a0, St (s', h1)) (SCMutation a a0, St (s', h1))).
   constructor. apply H in H2. destruct H2. inversion H2.
   destruct H2 as [c'' [s'' H_s]]. inversion H_s; subst.
   exists (h_update h1 (aeval s' a) (aeval s' a0)).
-  repeat split; eauto. rewrite union_update. auto.
+  repeat split... rewrite union_update...
   Case "Dispose".
   assert (multiStep (SCDispose a, St (s', h1)) (SCDispose a, St (s', h1))).
   constructor. apply H in H2. destruct H2. inversion H2.
   destruct H2 as [c'' [s'' H_s]]. inversion H_s; subst.
   exists (fun x => if eq_nat_dec x (aeval s' a) then None else h1 x).
-  repeat split; eauto. unfold disjoint, not_in_dom. intros.
-  destruct (eq_nat_dec l (aeval s' a)). left. auto. destruct (H0 l); auto.
+  repeat split... unfold disjoint, not_in_dom. intros.
+  destruct (eq_nat_dec l (aeval s' a))...
   apply functional_extensionality. intros.
-  unfold h_union. destruct (in_not_in_dec x).
-  auto. destruct i. destruct (eq_nat_dec x (aeval s' a)). auto.
-  destruct (in_not_in_dec x h1). auto. congruence.
+  unfold h_union. destruct (in_not_in_dec x)...
+  destruct i. destruct (eq_nat_dec x (aeval s' a))...
+  destruct (in_not_in_dec x h1)... congruence.
   unfold not_in_dom in n. destruct (eq_nat_dec x (aeval s' a)).
-  subst. destruct (H0 (aeval s' a)). destruct H8. congruence.
-  auto. destruct (in_not_in_dec x h1). destruct i. congruence.
-  reflexivity.
+  subst. destruct (H0 (aeval s' a))... destruct H8. congruence.
+  destruct (in_not_in_dec x h1)... destruct i. congruence.
 Qed.
 
 Lemma small_union: forall c s h c' s' h' h1,
@@ -569,32 +556,27 @@ Proof.
   apply H in H2. auto.
 Qed.
 
-Lemma out_of_name:
-  forall c s h h',
-    safeAt c (s, h) -> disjoint h h' -> safeAt_wtf c (s, h_union h h').
-Proof with eauto.
-  unfold safeAt_wtf. intros.
-  generalize dependent c.
-  generalize dependent s.
-  generalize dependent h.
-  induction H1; intros; simpl in *; subst.
-  assert (multiStep (c0, St (s0, h)) (c0, St (s0, h)))...
-  apply H in H1. destruct H1... destruct H1 as [c'' [s'' H_s]].
-  destruct s''. eapply small_union in H_s...
-  destruct s'. destruct s.
-  assert (frame c0). apply locality_frame.
-  destruct (H3 s0 h h' c' s h0)... destruct H5 as [H51 [H52 H53]].
-  assert (St (s, h0) = St (s, h_union x h')). rewrite H53...
-  eapply safeAt_continues in H2...
-  apply multi_abt in H1. simpl in H1. destruct H4. congruence.
-  auto.
-Qed.
-
 Lemma locality_safeMono: forall c : scom, safeMono c.
 Proof with eauto.
   unfold safeMono. intros.
-  eapply out_of_name in H...
-  apply safeAt_imply...
+  unfold safeAt. intros.
+  remember (c, St (s, h_union h h')) as cs.
+  remember (c', St s') as cs'.
+  generalize dependent c.
+  generalize dependent s.
+  generalize dependent h.
+  induction H1; intros; inversion Heqcs; subst; inversion Heqcs'; subst;
+  clear Heqcs; clear Heqcs'.
+  assert (multiStep (c', St (s0, h)) (c', St (s0, h)))...
+  apply H in H1. destruct H1... destruct H1 as [c'' [s'' H_s]].
+  destruct s''. eapply small_union in H_s...
+  assert (frame c0). apply locality_frame.
+  destruct s'0. destruct s.
+  destruct (H3 s0 h h' c'0 s h0)... destruct H4 as [H41 [H42 H43]].
+  assert ((c', St s') = (c', St s'))...
+  eapply IHmultiStep in H4...
+  eapply safeAt_continues in H2... rewrite H43...
+  apply multi_abt in H1... inversion H1.
 Qed.
 
 Lemma not_safe : ~ safeMono (SCCons X (ANum 1) (ANum 1)).
