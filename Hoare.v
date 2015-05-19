@@ -246,7 +246,7 @@ from any state, ..., to where m is between z^2 and (z+1)^2
       {{X = 100}}
 
 *)
-(* 1, 2, 3, 6, 7, 8, 9 *)
+(* 1, 2, 3, 4, 6, 7, 8, 9 *)
 (** [] *)
 
 (** (Note that we're using informal mathematical notations for
