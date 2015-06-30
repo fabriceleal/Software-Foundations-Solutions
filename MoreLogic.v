@@ -571,21 +571,18 @@ Theorem pigeonhole_principle: forall (X:Type) (l1  l2:list X),
    length l2 < length l1 ->
    repeats l1.
 Proof.
-   intros X l1. induction l1 as [|x l1'].
-   intros. inversion H1.
-   intros. destruct (H (appears_in x l1')).
+   intros X l1. induction l1 as [|x l1']; intros.
+   inversion H1.
+   destruct (H (appears_in x l1')).
    apply rep_here. apply H2. apply rep_later.
    destruct (H (appears_in x l2)). apply appears_in_app_split in H3.
    inversion H3. inversion H4.
    apply IHl1' with (l2:=(witness ++ witness0)).
-   apply H. intros. destruct (H (x0 = x)). rewrite H7 in H6.
-   apply contradiction_implies_anything with (P:=(appears_in x l1')).
-   split. apply H6. apply H2.
+   apply H. intros. destruct (H (x0 = x)). subst. contradiction.
    apply ai_later with (b:=x) in H6. apply H0 in H6.
    rewrite H5 in H6. apply appears_in_app in H6. apply app_appears_in.
    destruct H6.  left. apply H6. right.
-   inversion H6. rewrite H9 in H7. unfold not in H7.
-   apply False_ind. apply H7. reflexivity. apply H9.
+   inversion H6. contradiction. assumption.
    rewrite H5 in H1. rewrite app_length in H1.
    simpl in H1. rewrite <- plus_n_Sm in H1.
    apply Sn_le_Sm__n_le_m in H1.

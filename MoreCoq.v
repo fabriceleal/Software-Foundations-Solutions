@@ -406,15 +406,14 @@ Theorem plus_n_n_injective : forall n m,
      n + n = m + m ->
      n = m.
 Proof.
-  intros n. induction n as [| n'].
+  intros n. induction n as [| n']; intros; simpl in *.
     (* Hint: use the plus_n_Sm lemma *)
-  intros m H. simpl in H.
-  destruct m. reflexivity.
-  simpl in H. inversion H.
-  intros m H2. simpl in H2. rewrite <- plus_n_Sm in H2.
-  destruct m. inversion H2. simpl in H2.
-  rewrite <- plus_n_Sm in H2. inversion H2.
-  apply IHn' in H0. rewrite -> H0. reflexivity. Qed.
+  destruct m; inversion H; subst; reflexivity.
+  rewrite <- plus_n_Sm in H.
+  destruct m. inversion H. simpl in H.
+  rewrite <- plus_n_Sm in H. inversion H.
+  apply IHn' in H1. rewrite -> H1. reflexivity.
+Qed.
 (** [] *)
 
 (* ###################################################### *)

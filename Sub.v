@@ -478,12 +478,12 @@ false
       subtype relation---that is, an infinite sequence of types
       [S0], [S1], etc., such that all the [Si]'s are different and
       each [S(i+1)] is a subtype of [Si].
-true
+true records
     - There is an infinite _ascending_ chain of distinct types in
       the subtype relation---that is, an infinite sequence of types
       [S0], [S1], etc., such that all the [Si]'s are different and
       each [S(i+1)] is a supertype of [Si].
-true
+true Si = "Di -> Top" where Di is a descending chain
 [] *)
 
 (** **** Exercise: 2 stars (proper_subtypes)  *)
@@ -493,7 +493,7 @@ true
          ~(exists n, T = TBase n) ->
          exists S,
             S <: T  /\  S <> T
-false, TUnit
+false, TUnit TBool
 ]]
 [] *)
 
@@ -1045,9 +1045,7 @@ Lemma sub_inversion_Bool : forall U,
 Proof with auto.
   intros U Hs.
   remember TBool as V.
-  induction Hs... assert (U = T)... subst...
-  inversion HeqV. inversion HeqV.
-  inversion HeqV.
+  induction Hs; try solve by inversion... assert (U = T)... subst...
 Qed.
 
 (** **** Exercise: 3 stars, optional (sub_inversion_arrow)  *)

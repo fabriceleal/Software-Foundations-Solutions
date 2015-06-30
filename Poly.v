@@ -916,6 +916,12 @@ Fixpoint fold {X Y:Type} (f: X->Y->Y) (l:list X) (b:Y) : Y :=
   | h :: t => f h (fold f t b)
   end.
 
+Fixpoint foldl {X Y:Type} (f: X->Y->Y) (l:list X) (b:Y) : Y :=
+  match l with
+    | nil => b
+    | h :: t => fold f t (f h b)
+  end.
+      
 (** *** *)
 
 (** Intuitively, the behavior of the [fold] operation is to
@@ -1226,7 +1232,7 @@ Proof. reflexivity. Qed.
 (** Multiplication *)
 
 Definition mult (n m : nat) : nat :=
-  fun (X : Type) (f : X -> X) (x : X) => m X (n X f) x.
+  fun (X : Type) (f : X -> X) => m X (n X f).
 
 Example mult_1 : mult one one = one.
 Proof. reflexivity. Qed.

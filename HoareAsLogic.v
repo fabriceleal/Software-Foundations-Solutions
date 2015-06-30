@@ -272,11 +272,10 @@ Proof.
      eapply IHc2. intros st st' E1 H. apply H; assumption.
   Case "IFB".
     apply H_If.
-    apply IHc1. intros st H H1 H2. destruct H2.
-    eapply HT. apply E_IfTrue. eassumption. assumption. assumption.
-    apply IHc2. intros st H H1 H2. destruct H2.
-    eapply HT. apply E_IfFalse. eapply bassn_eval_false. eassumption.
-    assumption. assumption.
+    apply IHc1. intros st st' H1 H2. destruct H2.
+    eapply HT; eauto. apply E_IfTrue; auto.
+    apply IHc2. intros st st' H1 H2. destruct H2.
+    eapply HT; eauto. apply E_IfFalse; auto. eapply bassn_eval_false. assumption.
   Case "WHILE".
     eapply H_Consequence with (P' := wp (WHILE b DO c END) Q).
     apply H_While. apply IHc. intros st st' H H'.

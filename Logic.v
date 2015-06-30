@@ -753,7 +753,7 @@ Theorem excluded_middle_irrefutable:  forall (P:Prop), ~ ~ (P \/ ~ P).
 Proof.
   intros P.
   unfold not. intros. apply H.
-  right. intros. destruct H. left. apply H0.
+  right. intros. apply H. left. assumption.
 Qed.
 
 (* ########################################################## *)
